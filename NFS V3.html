@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Daily Bazar & Finance Manager Pro</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- Chart.js for Responsive Canvas Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- jsPDF and AutoTable for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Custom CSS Styles and Theme Animations -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --brand-primary: #4f46e5;
+            --brand-light: #eef2ff;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .view-section {
+            display: none;
+            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        /* Improved Mobile Bottom Sheet Modal */
+        @media (max-width: 640px) {
+            .mobile-bottom-sheet {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                border-radius: 24px 24px 0 0;
+                max-height: 90vh;
+                animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+        }
+        @media (min-width: 641px) {
+            .mobile-bottom-sheet {
+                border-radius: 24px;
+                animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+        }
+
+        /* FAB Menu styles */
+        .fab-backdrop {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .fab-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .fab-options {
+            opacity: 0;
+            transform: translateY(15px) scale(0.95);
+            pointer-events: none;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .fab-container.open .fab-options {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+        
+        .fab-main-btn {
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .fab-container.open .fab-main-btn {
+            transform: rotate(135deg);
+        }
+
+        /* Safe Bottom Padding for Mobile Navigation */
+        .pb-safe-nav {
+            padding-bottom: calc(5rem + env(safe-area-inset-bottom, 20px));
+        }
+        .nav-safe-padding {
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        /* Responsive Input Touch Target */
+        input, select, button {
+            min-height: 44px;
+        }
+        
+        /* Fix native date input styling on mobile */
+        input[type="date"] {
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        input[type="date"]::-webkit-date-and-time-value {
+            text-align: left;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen pb-safe-nav">
+
+    <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+            
+            <!-- App Brand & User Custom Profile Title -->
+            <div class="flex items-center justify-between w-full md:w-auto shrink-0">
+                <div class="flex items-center gap-3 text-indigo-600 cursor-pointer" onclick="switchTab('dashboard')">
+                    <div id="brand-logo-container" class="bg-indigo-600 p-2.5 rounded-2xl text-white shadow-md shadow-indigo-100 flex items-center justify-center">
+                        <i data-lucide="wallet" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span id="app-profile-name" class="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight block leading-tight">Daily Bazar Manager</span>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Smart Finance & Grocery</span>
+                    </div>
+                </div>
+
+                <!-- Quick Settings Icon Trigger on Mobile -->
+                <button onclick="switchTab('settings')" class="md:hidden p-2 text-slate-500 hover:text-indigo-600 bg-slate-100/80 hover:bg-slate-100 rounded-xl transition flex items-center justify-center">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Date Range Filter & Settings (Auto-saves on change) -->
+            <div class="flex items-center gap-1.5 sm:gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/70 w-full md:w-auto overflow-x-auto no-scrollbar scroll-smooth">
+                <select id="preset-date-range" onchange="handlePresetDateChange(true)" class="bg-white text-indigo-700 font-bold text-xs px-2.5 py-1.5 rounded-xl border border-slate-200/80 outline-none cursor-pointer shrink-0 shadow-2xs min-w-[100px]">
+                    <option value="this_month">This Month</option>
+                    <option value="last_month">Last Month</option>
+                    <option value="this_year">This Year</option>
+                    <option value="custom">Custom</option>
+                </select>
+                
+                <div class="flex items-center gap-1 shrink-0">
+                    <input type="date" id="start-date" class="bg-white text-slate-700 font-bold text-xs px-2 py-1.5 rounded-xl border border-slate-200 outline-none cursor-pointer shadow-2xs w-[115px] sm:w-auto" onchange="handleCustomDateChange()">
+                    <span class="text-slate-400 text-[10px] font-black uppercase mx-0.5">TO</span>
+                    <input type="date" id="end-date" class="bg-white text-slate-700 font-bold text-xs px-2 py-1.5 rounded-xl border border-slate-200 outline-none cursor-pointer shadow-2xs w-[115px] sm:w-auto" onchange="handleCustomDateChange()">
+                </div>
+
+                <button onclick="switchTab('settings')" title="Settings & Customization" class="hidden md:flex p-2 bg-white text-slate-600 rounded-xl border border-slate-200 hover:text-indigo-600 hover:bg-slate-50 transition shadow-2xs shrink-0 items-center justify-center">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6">
+        
+        <!-- ================= DASHBOARD VIEW ================= -->
+        <section id="view-dashboard" class="view-section active space-y-6">
+            
+            <!-- Export & Report Quick Actions Bar -->
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="date-range-badge" class="text-xs font-bold text-slate-600">Current View Summary</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+                    <button onclick="exportPDF()" class="flex-1 sm:flex-none bg-rose-50 hover:bg-rose-100 text-rose-700 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-rose-200/60 transition">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
+                    </button>
+                    <button onclick="exportExcel()" class="flex-1 sm:flex-none bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-emerald-200/60 transition">
+                        <i data-lucide="sheet" class="w-3.5 h-3.5"></i> Excel
+                    </button>
+                    <button onclick="printReport()" class="flex-1 sm:flex-none bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-200 transition">
+                        <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Cards Grid -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/80 relative overflow-hidden group">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] sm:text-xs font-bold text-emerald-700 uppercase tracking-wider">Income</span>
+                        <div class="p-2 rounded-xl bg-emerald-50 text-emerald-600"><i data-lucide="trending-up" class="w-4 h-4"></i></div>
+                    </div>
+                    <div id="dash-income" class="text-base sm:text-xl md:text-2xl font-black text-slate-900 truncate">৳ 0.00</div>
+                    <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-1">Total earnings</div>
+                </div>
+
+                <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/80 relative overflow-hidden group">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] sm:text-xs font-bold text-rose-700 uppercase tracking-wider">Expenses</span>
+                        <div class="p-2 rounded-xl bg-rose-50 text-rose-600"><i data-lucide="trending-down" class="w-4 h-4"></i></div>
+                    </div>
+                    <div id="dash-expense" class="text-base sm:text-xl md:text-2xl font-black text-slate-900 truncate">৳ 0.00</div>
+                    <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-1">Total outgoings</div>
+                </div>
+
+                <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/80 relative overflow-hidden group">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] sm:text-xs font-bold text-amber-700 uppercase tracking-wider">Bazar</span>
+                        <div class="p-2 rounded-xl bg-amber-50 text-amber-600"><i data-lucide="shopping-cart" class="w-4 h-4"></i></div>
+                    </div>
+                    <div id="dash-bazar" class="text-base sm:text-xl md:text-2xl font-black text-slate-900 truncate">৳ 0.00</div>
+                    <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-1">Grocery & Market</div>
+                </div>
+
+                <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/80 relative overflow-hidden group">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] sm:text-xs font-bold text-indigo-700 uppercase tracking-wider">Net Savings</span>
+                        <div class="p-2 rounded-xl bg-indigo-50 text-indigo-600"><i data-lucide="wallet" class="w-4 h-4"></i></div>
+                    </div>
+                    <div id="dash-savings" class="text-base sm:text-xl md:text-2xl font-black text-indigo-600 truncate">৳ 0.00</div>
+                    <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-1">Income - Expenses</div>
+                </div>
+            </div>
+
+            <!-- Monthly Budget Widget -->
+            <div class="bg-white rounded-3xl p-5 shadow-xs border border-slate-200/80 space-y-3">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 bg-indigo-50 text-indigo-600 rounded-xl"><i data-lucide="target" class="w-4 h-4"></i></div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800">Monthly Expense Budget Tracker</h3>
+                            <p class="text-[11px] text-slate-400">Monitor spending against target threshold</p>
+                        </div>
+                    </div>
+                    <div id="budget-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
+                        Budget: Not Set
+                    </div>
+                </div>
+                <!-- Progress Bar -->
+                <div class="space-y-1.5">
+                    <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200/60">
+                        <div id="budget-progress-bar" class="bg-indigo-600 h-2 rounded-full transition-all duration-500 w-0"></div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-slate-500 font-semibold">
+                        <span id="budget-used-text">Used: ৳ 0.00</span>
+                        <span id="budget-remaining-text">Remaining: ৳ 0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Charts & Recent Activity -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Doughnut Expense Breakdown Chart -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 lg:col-span-2 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800">Category Spending Overview</h3>
+                            <p class="text-xs text-slate-400">Distribution of expenses in selected date range</p>
+                        </div>
+                        <i data-lucide="pie-chart" class="w-5 h-5 text-slate-400"></i>
+                    </div>
+                    <div class="relative h-64 sm:h-72 w-full flex items-center justify-center">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Feed -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-base font-bold text-slate-800">Recent Transactions</h3>
+                            <span class="text-xs font-bold text-indigo-600 hover:underline cursor-pointer" onclick="switchTab('expense')">View All</span>
+                        </div>
+                        <div id="recent-transactions-list" class="space-y-2.5">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= BAZAR VIEW ================= -->
+        <section id="view-bazar" class="view-section space-y-4">
+            <div class="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-amber-100 text-amber-700 rounded-2xl"><i data-lucide="shopping-cart" class="w-6 h-6"></i></div>
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">Daily Bazar</h2>
+                        <p class="text-[11px] sm:text-xs text-slate-500">Track raw groceries, fish, meat & veggies</p>
+                    </div>
+                </div>
+                <button onclick="openModal('bazar')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md transition shrink-0">
+                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Bazar</span>
+                </button>
+            </div>
+            <div id="list-bazar" class="grid gap-3"></div>
+        </section>
+
+        <!-- ================= EXPENSE VIEW ================= -->
+        <section id="view-expense" class="view-section space-y-4">
+            <div class="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-rose-100 text-rose-700 rounded-2xl"><i data-lucide="trending-down" class="w-6 h-6"></i></div>
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">Daily Expenses</h2>
+                        <p class="text-[11px] sm:text-xs text-slate-500">Personal & household outgoing expenditures</p>
+                    </div>
+                </div>
+                <button onclick="openModal('expense')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md transition shrink-0">
+                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Expense</span>
+                </button>
+            </div>
+            <div id="list-expense" class="grid gap-3"></div>
+        </section>
+
+        <!-- ================= INCOME VIEW ================= -->
+        <section id="view-income" class="view-section space-y-4">
+            <div class="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-emerald-100 text-emerald-700 rounded-2xl"><i data-lucide="trending-up" class="w-6 h-6"></i></div>
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">Income Records</h2>
+                        <p class="text-[11px] sm:text-xs text-slate-500">Salary, freelance earnings, investments</p>
+                    </div>
+                </div>
+                <button onclick="openModal('income')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md transition shrink-0">
+                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Income</span>
+                </button>
+            </div>
+            <div id="list-income" class="grid gap-3"></div>
+        </section>
+
+        <!-- ================= BILLS VIEW ================= -->
+        <section id="view-bills" class="view-section space-y-4">
+            <div class="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-blue-100 text-blue-700 rounded-2xl"><i data-lucide="receipt" class="w-6 h-6"></i></div>
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">Bills & Utilities</h2>
+                        <p class="text-[11px] sm:text-xs text-slate-500">Electricity, Gas, Internet, House Rent</p>
+                    </div>
+                </div>
+                <button onclick="openModal('bill')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md transition shrink-0">
+                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Bill</span>
+                </button>
+            </div>
+            <div id="list-bill" class="grid gap-3"></div>
+        </section>
+
+        <!-- ================= SETTINGS & CUSTOMIZATION VIEW ================= -->
+        <section id="view-settings" class="view-section space-y-6">
+            <div class="flex items-center gap-3 bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
+                <div class="p-3 bg-indigo-100 text-indigo-700 rounded-2xl"><i data-lucide="sliders" class="w-6 h-6"></i></div>
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Settings & Configuration</h2>
+                    <p class="text-xs text-slate-500">Profile name, currency, categories, data management</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Profile & Budget Settings -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
+                    <div class="flex items-center gap-2 text-indigo-700">
+                        <i data-lucide="user-check" class="w-5 h-5"></i>
+                        <h3 class="text-base font-bold text-slate-800">Profile & Budget</h3>
+                    </div>
+
+                    <form onsubmit="handleSaveProfileSettings(event)" class="space-y-3.5">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-slate-600">App Profile Title / Family Name</label>
+                            <input type="text" id="setting-profile-name" placeholder="e.g. Rahim's Family Bazar" required class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs font-bold text-slate-600">Currency Symbol</label>
+                                <select id="setting-currency-symbol" class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none">
+                                    <option value="৳">৳ (BDT - Taka)</option>
+                                    <option value="$">$ (USD - Dollar)</option>
+                                    <option value="₹">₹ (INR - Rupee)</option>
+                                    <option value="€">€ (EUR - Euro)</option>
+                                    <option value="£">£ (GBP - Pound)</option>
+                                    <option value="custom">Custom...</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col gap-1 hidden" id="custom-currency-wrapper">
+                                <label class="text-xs font-bold text-slate-600">Custom Symbol</label>
+                                <input type="text" id="setting-custom-currency" placeholder="e.g. Tk" class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs font-bold text-slate-600">Monthly Budget Threshold</label>
+                                <input type="number" id="setting-monthly-budget" placeholder="e.g. 25000" step="500" class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-100">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs font-bold text-slate-600">Monthly Cycle Start Day</label>
+                                <input type="number" id="setting-cycle-start" min="1" max="28" placeholder="e.g. 1 or 25" value="1" title="Day your accounting month begins" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500">
+                                <span class="text-[10px] text-slate-400">Set to 25 if salary comes on 25th.</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700 transition shadow-xs flex items-center justify-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i> Save Profile Preferences
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Custom Category Manager -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-indigo-700">
+                            <i data-lucide="layers" class="w-5 h-5"></i>
+                            <h3 class="text-base font-bold text-slate-800">Category Customizer</h3>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400">Add or manage custom spending & income categories.</p>
+
+                    <form onsubmit="handleAddCustomCategory(event)" class="space-y-2">
+                        <div class="flex gap-2">
+                            <select id="new-cat-type" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none">
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
+                                <option value="bill">Bill</option>
+                            </select>
+                            <input type="text" id="new-cat-name" placeholder="Category Name" required class="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+                            <button type="submit" class="bg-slate-800 text-white px-3 py-2 rounded-xl text-xs font-bold hover:bg-slate-900 transition flex items-center justify-center gap-1 shrink-0 w-16">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="border-t border-slate-100 pt-3">
+                        <label class="text-[11px] font-bold uppercase text-slate-400 tracking-wider block mb-2">Active Categories</label>
+                        <div id="custom-categories-list" class="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-1">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auto-suggest Product Catalog Manager -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
+                    <div class="flex items-center gap-2 text-indigo-700">
+                        <i data-lucide="tag" class="w-5 h-5"></i>
+                        <h3 class="text-base font-bold text-slate-800">Bazar Item Catalog</h3>
+                    </div>
+                    <p class="text-xs text-slate-400">Manage item auto-suggestions during Bazar entry.</p>
+                    
+                    <form id="custom-product-form" onsubmit="handleAddCustomProduct(event)" class="flex gap-2">
+                        <input type="text" id="new-product-name" placeholder="e.g. Miniket Rice, Beef..." required class="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-indigo-500">
+                        <button type="submit" class="bg-amber-600 text-white px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-amber-700 transition flex items-center justify-center gap-1 shrink-0">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Save
+                        </button>
+                    </form>
+
+                    <div class="border-t border-slate-100 pt-3">
+                        <label class="text-[11px] font-bold uppercase text-slate-400 tracking-wider block mb-2">Catalog Items</label>
+                        <div id="custom-products-list" class="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-1">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Database Backup, Restore & Reset -->
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
+                    <div class="flex items-center gap-2 text-indigo-700">
+                        <i data-lucide="database" class="w-5 h-5"></i>
+                        <h3 class="text-base font-bold text-slate-800">Data Backup & Restore</h3>
+                    </div>
+                    <p class="text-xs text-slate-400">Export backup file or restore records across devices.</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <button onclick="exportJSONBackup()" class="bg-indigo-50 text-indigo-700 border border-indigo-100 p-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 hover:bg-indigo-100 transition font-bold text-xs text-center min-h-[70px]">
+                            <i data-lucide="download" class="w-5 h-5"></i> Export
+                        </button>
+                        
+                        <label class="bg-emerald-50 text-emerald-700 border border-emerald-100 p-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 hover:bg-emerald-100 transition font-bold text-xs text-center cursor-pointer min-h-[70px] m-0">
+                            <i data-lucide="upload" class="w-5 h-5"></i> Restore
+                            <input type="file" id="import-json-file" accept=".json" onchange="importJSONBackup(event)" class="hidden">
+                        </label>
+
+                        <button onclick="confirmClearAllData()" class="bg-rose-50 text-rose-700 border border-rose-100 p-3 rounded-2xl flex flex-col items-center justify-center gap-1.5 hover:bg-rose-100 transition font-bold text-xs text-center min-h-[70px]">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i> Reset DB
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- Mobile FAB Overlay Backdrop -->
+    <div id="fab-backdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 fab-backdrop" onclick="toggleFab(false)"></div>
+
+    <!-- Floating Action Button (FAB) Container - Shifted slightly up for mobile safe area -->
+    <div class="fixed bottom-24 sm:bottom-20 right-4 sm:right-8 z-40 fab-container" id="fab-container">
+        <!-- Floating Options Stack -->
+        <div class="absolute bottom-full right-0 mb-3 flex flex-col gap-2.5 items-end fab-options">
+            <button onclick="openModal('bazar'); toggleFab(false)" class="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full shadow-lg border border-slate-100 active:scale-95 transition">
+                <span class="font-bold text-xs text-slate-700">Add Bazar</span>
+                <div class="bg-amber-100 text-amber-700 p-2 rounded-full"><i data-lucide="shopping-cart" class="w-4 h-4"></i></div>
+            </button>
+            <button onclick="openModal('expense'); toggleFab(false)" class="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full shadow-lg border border-slate-100 active:scale-95 transition">
+                <span class="font-bold text-xs text-slate-700">Add Expense</span>
+                <div class="bg-rose-100 text-rose-700 p-2 rounded-full"><i data-lucide="trending-down" class="w-4 h-4"></i></div>
+            </button>
+            <button onclick="openModal('income'); toggleFab(false)" class="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full shadow-lg border border-slate-100 active:scale-95 transition">
+                <span class="font-bold text-xs text-slate-700">Add Income</span>
+                <div class="bg-emerald-100 text-emerald-700 p-2 rounded-full"><i data-lucide="trending-up" class="w-4 h-4"></i></div>
+            </button>
+            <button onclick="openModal('bill'); toggleFab(false)" class="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full shadow-lg border border-slate-100 active:scale-95 transition">
+                <span class="font-bold text-xs text-slate-700">Add Bill</span>
+                <div class="bg-blue-100 text-blue-700 p-2 rounded-full"><i data-lucide="receipt" class="w-4 h-4"></i></div>
+            </button>
+        </div>
+        <!-- Trigger Main Button -->
+        <button onclick="toggleFab()" class="fab-main-btn bg-indigo-600 text-white w-14 h-14 rounded-2xl shadow-xl hover:bg-indigo-700 active:scale-95 transition flex items-center justify-center">
+            <i data-lucide="plus" class="w-6 h-6"></i>
+        </button>
+    </div>
+
+    <!-- Fixed Bottom Mobile Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 z-30 shadow-lg nav-safe-padding">
+        <div class="max-w-6xl mx-auto px-2 flex justify-between items-center h-16">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-tab flex-1 flex flex-col items-center justify-center py-1 transition-colors text-indigo-600 h-full">
+                <div class="p-1 rounded-xl transition-all duration-300 bg-indigo-50 mb-0.5 flex items-center justify-center">
+                    <i data-lucide="home" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[10px] font-bold tracking-tight">Dashboard</span>
+            </button>
+            <button onclick="switchTab('bazar')" id="tab-bazar" class="nav-tab flex-1 flex flex-col items-center justify-center py-1 transition-colors text-slate-400 h-full">
+                <div class="p-1 rounded-xl transition-all duration-300 mb-0.5 flex items-center justify-center">
+                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[10px] font-bold tracking-tight">Bazar</span>
+            </button>
+            <button onclick="switchTab('expense')" id="tab-expense" class="nav-tab flex-1 flex flex-col items-center justify-center py-1 transition-colors text-slate-400 h-full">
+                <div class="p-1 rounded-xl transition-all duration-300 mb-0.5 flex items-center justify-center">
+                    <i data-lucide="trending-down" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[10px] font-bold tracking-tight">Expense</span>
+            </button>
+            <button onclick="switchTab('income')" id="tab-income" class="nav-tab flex-1 flex flex-col items-center justify-center py-1 transition-colors text-slate-400 h-full">
+                <div class="p-1 rounded-xl transition-all duration-300 mb-0.5 flex items-center justify-center">
+                    <i data-lucide="trending-up" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[10px] font-bold tracking-tight">Income</span>
+            </button>
+            <button onclick="switchTab('bills')" id="tab-bills" class="nav-tab flex-1 flex flex-col items-center justify-center py-1 transition-colors text-slate-400 h-full">
+                <div class="p-1 rounded-xl transition-all duration-300 mb-0.5 flex items-center justify-center">
+                    <i data-lucide="receipt" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[10px] font-bold tracking-tight">Bills</span>
+            </button>
+            <button onclick="switchTab('settings')" id="tab-settings" class="nav-tab flex-1 flex flex-col items-center justify-center py-1 transition-colors text-slate-400 h-full">
+                <div class="p-1 rounded-xl transition-all duration-300 mb-0.5 flex items-center justify-center">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </div>
+                <span class="text-[10px] font-bold tracking-tight">Settings</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Datalist for Autocomplete Product Suggestions -->
+    <datalist id="product-suggestions"></datalist>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4"></div>
+
+    <!-- Custom Confirm Dialog Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden justify-center items-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl modal-sheet space-y-4">
+            <div class="flex items-center gap-3 text-amber-500">
+                <div class="p-3 bg-amber-100 rounded-2xl flex items-center justify-center"><i data-lucide="alert-triangle" class="w-6 h-6"></i></div>
+                <h3 class="text-lg font-bold text-slate-800" id="confirm-title">Confirm Action</h3>
+            </div>
+            <p class="text-slate-600 text-xs sm:text-sm leading-relaxed" id="confirm-message">Are you sure you want to proceed?</p>
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeConfirmModal(false)" class="flex-1 py-3 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 text-xs flex items-center justify-center">Cancel</button>
+                <button id="confirm-ok-btn" class="flex-1 py-3 rounded-2xl font-bold text-white bg-rose-600 hover:bg-rose-700 text-xs shadow-md flex items-center justify-center">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Entry / Edit Modal Bottom Sheet -->
+    <div id="tx-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden justify-center sm:items-center p-0 sm:p-4 pb-[env(safe-area-inset-bottom)]">
+        <div class="bg-white w-full max-w-2xl flex flex-col shadow-2xl mobile-bottom-sheet">
+            
+            <!-- Mobile Drag Handle Bar -->
+            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mt-3 mb-1 shrink-0 sm:hidden"></div>
+
+            <div class="px-5 py-3 border-b border-slate-100 flex justify-between items-center shrink-0">
+                <h2 class="text-lg font-bold text-slate-800" id="modal-title">Add Record</h2>
+                <button onclick="closeModal()" class="p-2 bg-slate-100 rounded-full hover:bg-slate-200 text-slate-600 flex items-center justify-center">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="p-5 overflow-y-auto overscroll-contain flex-1 space-y-4">
+                <form id="tx-form" class="space-y-4">
+                    <input type="hidden" id="tx-id">
+                    <input type="hidden" id="tx-type">
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-slate-600 ml-1">Date *</label>
+                            <input type="date" id="tx-date" required class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl w-full text-sm font-semibold">
+                        </div>
+                        <div class="flex flex-col gap-1" id="group-amount">
+                            <label class="text-xs font-bold text-slate-600 ml-1">Amount (<span class="currency-label">৳</span>) *</label>
+                            <input type="number" id="tx-amount" step="0.01" required placeholder="0.00" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl w-full text-sm font-extrabold text-slate-900">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4" id="group-category-payment">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-slate-600 ml-1">Category *</label>
+                            <select id="tx-category" required class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl w-full text-sm font-semibold outline-none">
+                                <!-- Options populated by JS -->
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-slate-600 ml-1">Payment Method</label>
+                            <select id="tx-payment" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl w-full text-sm font-semibold outline-none">
+                                <option value="Cash">Cash</option>
+                                <option value="Bank">Bank</option>
+                                <option value="bKash">bKash</option>
+                                <option value="Nagad">Nagad</option>
+                                <option value="Card">Card</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 hidden" id="group-bill-details">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-slate-600 ml-1">Due Date</label>
+                            <input type="date" id="tx-due-date" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl w-full text-sm">
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-slate-600 ml-1">Paid Amount (<span class="currency-label">৳</span>)</label>
+                            <input type="number" id="tx-paid-amount" step="0.01" value="0" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl w-full text-sm font-bold">
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-bold text-slate-600 ml-1">Vendor / Shop / Remarks</label>
+                        <input type="text" id="tx-vendor" placeholder="e.g. Local Supermarket, Agora..." class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl w-full text-sm">
+                    </div>
+
+                    <!-- Dynamic Bazar Multi-Items Section -->
+                    <div id="bazar-items-section" class="hidden border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/70">
+                        <div class="px-4 py-2.5 bg-slate-100 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider flex justify-between items-center">
+                            <span>Market Item breakdown</span>
+                            <span id="bazar-total-display" class="text-indigo-700 font-black">Total: ৳ 0.00</span>
+                        </div>
+                        <div id="bazar-items-container" class="p-3 space-y-2.5 max-h-48 overflow-y-auto overscroll-contain">
+                            <!-- Items added dynamically -->
+                        </div>
+                        <div class="p-3 bg-white border-t border-slate-200">
+                            <button type="button" onclick="addBazarItemRow()" class="w-full py-2.5 flex items-center justify-center gap-1.5 border-2 border-dashed border-indigo-200 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-50 transition">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Add Item Line
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-bold text-slate-600 ml-1">Notes</label>
+                        <input type="text" id="tx-notes" placeholder="Optional notes or receipt no." class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl w-full text-sm">
+                    </div>
+                </form>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50 shrink-0 flex gap-3 sm:rounded-b-3xl">
+                <button onclick="closeModal()" class="flex-1 py-3.5 rounded-2xl font-bold text-slate-600 bg-slate-200 hover:bg-slate-300 text-xs flex items-center justify-center">Cancel</button>
+                <button type="button" onclick="saveTransaction()" class="flex-1 py-3.5 rounded-2xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md text-xs flex items-center justify-center">Save Record</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Core Application Logic & IndexedDB Engine
+        $(document).ready(async function() {
+            lucide.createIcons();
+            
+            await initDB();
+            await loadSettings();
+            await applyDefaultDateRange();
+            await loadData();
+            await updateProductSuggestions();
+            await renderCustomProductsList();
+            await renderCustomCategoriesList();
+
+            // Toggle custom currency field visibility
+            $('#setting-currency-symbol').on('change', function() {
+                if ($(this).val() === 'custom') {
+                    $('#custom-currency-wrapper').removeClass('hidden');
+                } else {
+                    $('#custom-currency-wrapper').addClass('hidden');
+                }
+            });
+        });
+
+        // App Constants & Defaults
+        const DB_NAME = 'FinanceManagerHTMLDB';
+        const DB_VERSION = 3; 
+        let db;
+        let currentChart = null;
+
+        let currencySymbol = '৳';
+        let profileName = 'Daily Bazar Manager';
+        let monthlyBudget = 0;
+        let accountingCycleStartDay = 1;
+
+        // Default Categories
+        let CATEGORIES = {
+            expense: ['Food', 'Transport', 'Electricity', 'Gas', 'Water', 'Internet', 'Mobile', 'Rent', 'Medical', 'Education', 'Shopping', 'Other'],
+            income: ['Salary', 'Business', 'Freelance', 'Bonus', 'Other'],
+            bill: ['Electricity', 'Gas', 'Water', 'Internet', 'Credit Card', 'Other'],
+            bazar: ['Daily Bazar']
+        };
+
+        // State variables
+        let startDateFilter = '';
+        let endDateFilter = '';
+        let transactions = [];
+        let bazarItems = [];
+        let appSettings = { defaultRange: 'this_month' };
+
+        // Toast Notification System
+        function showToast(message, type = 'info') {
+            const colors = {
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-rose-600 text-white',
+                warning: 'bg-amber-500 text-white',
+                info: 'bg-indigo-600 text-white'
+            };
+            const iconMap = {
+                success: 'check-circle',
+                error: 'alert-circle',
+                warning: 'alert-triangle',
+                info: 'info'
+            };
+            
+            const toastId = 'toast-' + Date.now();
+            const html = `
+                <div id="${toastId}" class="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl ${colors[type] || colors.info} transform transition-all duration-300 translate-y-[-10px] opacity-0">
+                    <i data-lucide="${iconMap[type] || 'info'}" class="w-4 h-4 shrink-0"></i>
+                    <span class="text-xs font-bold leading-snug">${message}</span>
+                </div>
+            `;
+            $('#toast-container').append(html);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                $(`#${toastId}`).removeClass('translate-y-[-10px] opacity-0').addClass('translate-y-0 opacity-100');
+            }, 10);
+            
+            setTimeout(() => {
+                $(`#${toastId}`).removeClass('translate-y-0 opacity-100').addClass('translate-y-[-10px] opacity-0');
+                setTimeout(() => $(`#${toastId}`).remove(), 300);
+            }, 3500);
+        }
+
+        // Custom Confirm Dialog
+        let confirmCallback = null;
+        function showConfirm(title, message, onConfirm) {
+            $('#confirm-title').text(title);
+            $('#confirm-message').text(message);
+            confirmCallback = onConfirm;
+            $('#confirm-modal').removeClass('hidden').addClass('flex');
+            lucide.createIcons();
+        }
+
+        function closeConfirmModal(result) {
+            $('#confirm-modal').addClass('hidden').removeClass('flex');
+            if(result && typeof confirmCallback === 'function') {
+                confirmCallback();
+            }
+            confirmCallback = null;
+        }
+
+        $('#confirm-ok-btn').on('click', function() {
+            closeConfirmModal(true);
+        });
+
+        // FAB Menu Toggle
+        function toggleFab(forceState) {
+            const container = $('#fab-container');
+            const backdrop = $('#fab-backdrop');
+            
+            if (forceState !== undefined) {
+                if (forceState) {
+                    container.addClass('open');
+                    backdrop.addClass('active');
+                } else {
+                    container.removeClass('open');
+                    backdrop.removeClass('active');
+                }
+            } else {
+                container.toggleClass('open');
+                backdrop.toggleClass('active');
+            }
+        }
+
+        // Utilities
+        const formatCurrency = (amt) => `${currencySymbol} ${Number(amt || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+        const generateID = (type) => `${type.substring(0,2).toUpperCase()}-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+        
+        // Timezone Safe Date Formatting
+        const formatSafeDate = (d) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('transactions')) db.createObjectStore('transactions', { keyPath: 'id' });
+                    if (!db.objectStoreNames.contains('custom_products')) db.createObjectStore('custom_products', { keyPath: 'id' });
+                    if (!db.objectStoreNames.contains('custom_categories')) db.createObjectStore('custom_categories', { keyPath: 'id' });
+                    if (!db.objectStoreNames.contains('app_settings')) db.createObjectStore('app_settings', { keyPath: 'key' });
+                };
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve(db);
+                };
+                request.onerror = (e) => reject(e);
+            });
+        }
+
+        function dbGetAll(storeName = 'transactions') {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        function dbSave(record, storeName = 'transactions') {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.put(record);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        function dbDelete(id, storeName = 'transactions') {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.delete(id);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        function dbClearStore(storeName) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.clear();
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function loadSettings() {
+            const settingsList = await dbGetAll('app_settings');
+            settingsList.forEach(s => {
+                appSettings[s.key] = s.value;
+            });
+
+            if (appSettings.profileName) {
+                profileName = appSettings.profileName;
+                $('#app-profile-name').text(profileName);
+                $('#setting-profile-name').val(profileName);
+            }
+
+            if (appSettings.currencySymbol) {
+                currencySymbol = appSettings.currencySymbol;
+                $('.currency-label').text(currencySymbol);
+                if (['৳', '$', '₹', '€', '£'].includes(currencySymbol)) {
+                    $('#setting-currency-symbol').val(currencySymbol);
+                } else {
+                    $('#setting-currency-symbol').val('custom');
+                    $('#custom-currency-wrapper').removeClass('hidden');
+                    $('#setting-custom-currency').val(currencySymbol);
+                }
+            }
+
+            if (appSettings.monthlyBudget) {
+                monthlyBudget = Number(appSettings.monthlyBudget);
+                $('#setting-monthly-budget').val(monthlyBudget);
+            }
+
+            if (appSettings.cycleStartDay) {
+                accountingCycleStartDay = Number(appSettings.cycleStartDay);
+                $('#setting-cycle-start').val(accountingCycleStartDay);
+            }
+
+            if (appSettings.defaultRange) {
+                $('#preset-date-range').val(appSettings.defaultRange);
+            }
+
+            // Load Custom Categories
+            const customCats = await dbGetAll('custom_categories');
+            customCats.forEach(c => {
+                if (CATEGORIES[c.type] && !CATEGORIES[c.type].includes(c.name)) {
+                    CATEGORIES[c.type].push(c.name);
+                }
+            });
+        }
+
+        async function handleSaveProfileSettings(e) {
+            e.preventDefault();
+            const name = $('#setting-profile-name').val().trim();
+            const curSel = $('#setting-currency-symbol').val();
+            const customCur = $('#setting-custom-currency').val().trim();
+            const budget = $('#setting-monthly-budget').val();
+            const cycleStart = parseInt($('#setting-cycle-start').val()) || 1;
+
+            profileName = name || 'Daily Bazar Manager';
+            currencySymbol = curSel === 'custom' ? (customCur || '৳') : curSel;
+            monthlyBudget = Number(budget || 0);
+            accountingCycleStartDay = Math.min(Math.max(cycleStart, 1), 28); 
+
+            await dbSave({ key: 'profileName', value: profileName }, 'app_settings');
+            await dbSave({ key: 'currencySymbol', value: currencySymbol }, 'app_settings');
+            await dbSave({ key: 'monthlyBudget', value: monthlyBudget }, 'app_settings');
+            await dbSave({ key: 'cycleStartDay', value: accountingCycleStartDay }, 'app_settings');
+
+            $('#app-profile-name').text(profileName);
+            $('.currency-label').text(currencySymbol);
+            $('#setting-cycle-start').val(accountingCycleStartDay);
+
+            applyDefaultDateRange();
+            await loadData();
+            showToast("Profile & Settings saved successfully!", "success");
+        }
+
+        // Automatic saving of Date Ranges
+        async function handlePresetDateChange(userInitiated = false) {
+            const val = $('#preset-date-range').val();
+            if (userInitiated) {
+                await dbSave({ key: 'defaultRange', value: val }, 'app_settings');
+                appSettings.defaultRange = val;
+                if(val !== 'custom') {
+                    showToast(`Default filter set to ${val.replace('_',' ')}`, "info");
+                }
+            }
+            applyDefaultDateRange();
+            loadData();
+        }
+
+        async function handleCustomDateChange() {
+            const s = $('#start-date').val();
+            const e = $('#end-date').val();
+            
+            $('#preset-date-range').val('custom');
+            
+            await dbSave({ key: 'defaultRange', value: 'custom' }, 'app_settings');
+            appSettings.defaultRange = 'custom';
+            
+            if (s && e) {
+                await dbSave({ key: 'defaultStartDate', value: s }, 'app_settings');
+                await dbSave({ key: 'defaultEndDate', value: e }, 'app_settings');
+                appSettings.defaultStartDate = s;
+                appSettings.defaultEndDate = e;
+                showToast("Custom date range saved as default.", "info");
+            }
+            loadData();
+        }
+
+        function applyDefaultDateRange() {
+            const rangeMode = $('#preset-date-range').val();
+            const now = new Date();
+            let start, end;
+            const startDay = accountingCycleStartDay || 1;
+
+            if (rangeMode === 'custom') {
+                if (appSettings.defaultStartDate) $('#start-date').val(appSettings.defaultStartDate);
+                if (appSettings.defaultEndDate) $('#end-date').val(appSettings.defaultEndDate);
+                return;
+            }
+
+            if (rangeMode === 'this_month') {
+                if (startDay === 1) {
+                    start = new Date(now.getFullYear(), now.getMonth(), 1);
+                    end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                } else {
+                    let targetMonth = now.getMonth();
+                    let targetYear = now.getFullYear();
+                    if (now.getDate() < startDay) targetMonth -= 1;
+                    start = new Date(targetYear, targetMonth, startDay);
+                    end = new Date(targetYear, targetMonth + 1, startDay - 1);
+                }
+            } else if (rangeMode === 'last_month') {
+                if (startDay === 1) {
+                    start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    end = new Date(now.getFullYear(), now.getMonth(), 0);
+                } else {
+                    let targetMonth = now.getMonth() - 1;
+                    let targetYear = now.getFullYear();
+                    if (now.getDate() < startDay) targetMonth -= 1; 
+                    start = new Date(targetYear, targetMonth, startDay);
+                    end = new Date(targetYear, targetMonth + 1, startDay - 1);
+                }
+            } else if (rangeMode === 'this_year') {
+                if (startDay === 1) {
+                    start = new Date(now.getFullYear(), 0, 1);
+                    end = new Date(now.getFullYear(), 11, 31);
+                } else {
+                    let targetYear = now.getFullYear();
+                    if (now.getMonth() === 0 && now.getDate() < startDay) targetYear -= 1;
+                    start = new Date(targetYear, 0, startDay);
+                    end = new Date(targetYear + 1, 0, startDay - 1);
+                }
+            }
+
+            if(start && end) {
+                $('#start-date').val(formatSafeDate(start));
+                $('#end-date').val(formatSafeDate(end));
+            }
+        }
+
+        // Custom Categories & Products
+        async function handleAddCustomCategory(e) {
+            e.preventDefault();
+            const type = $('#new-cat-type').val();
+            const name = $('#new-cat-name').val().trim();
+            if (!name) return;
+
+            if (CATEGORIES[type].includes(name)) {
+                showToast("Category already exists!", "warning");
+                return;
+            }
+
+            const newCat = { id: 'CAT-' + Date.now(), type: type, name: name };
+            await dbSave(newCat, 'custom_categories');
+            CATEGORIES[type].push(name);
+            $('#new-cat-name').val('');
+            await renderCustomCategoriesList();
+            showToast(`Category "${name}" added!`, "success");
+        }
+
+        async function deleteCustomCategory(id, name, type) {
+            showConfirm("Delete Category", `Remove category "${name}"?`, async () => {
+                await dbDelete(id, 'custom_categories');
+                CATEGORIES[type] = CATEGORIES[type].filter(c => c !== name);
+                await renderCustomCategoriesList();
+                showToast(`Category removed.`, "info");
+            });
+        }
+
+        async function renderCustomCategoriesList() {
+            const customCats = await dbGetAll('custom_categories');
+            const container = $('#custom-categories-list');
+            container.empty();
+
+            if (customCats.length === 0) {
+                container.html(`<span class="text-xs text-slate-400 italic">No custom categories added yet.</span>`);
+                return;
+            }
+
+            customCats.forEach(c => {
+                container.append(`
+                    <span class="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-full text-[11px] font-bold">
+                        <span class="uppercase text-[9px] text-indigo-600 font-extrabold">[${c.type}]</span> ${c.name}
+                        <button type="button" onclick="deleteCustomCategory('${c.id}', '${c.name.replace(/'/g, "\\'")}', '${c.type}')" class="hover:text-rose-600 transition flex items-center justify-center">
+                            <i data-lucide="x" class="w-3 h-3"></i>
+                        </button>
+                    </span>
+                `);
+            });
+            lucide.createIcons();
+        }
+
+        async function handleAddCustomProduct(e) {
+            e.preventDefault();
+            const nameInput = $('#new-product-name');
+            const name = nameInput.val().trim();
+            if (!name) return;
+
+            const newProd = { id: 'PROD-' + Date.now(), name: name };
+            await dbSave(newProd, 'custom_products');
+            nameInput.val('');
+            await updateProductSuggestions();
+            await renderCustomProductsList();
+            showToast(`Product "${name}" saved to catalog!`, "success");
+        }
+
+        async function deleteCustomProduct(id, name) {
+            showConfirm("Delete Custom Product", `Remove "${name}" from catalog?`, async () => {
+                await dbDelete(id, 'custom_products');
+                await updateProductSuggestions();
+                await renderCustomProductsList();
+                showToast(`Product removed.`, "info");
+            });
+        }
+
+        async function renderCustomProductsList() {
+            const customProds = await dbGetAll('custom_products');
+            const container = $('#custom-products-list');
+            container.empty();
+
+            if (customProds.length === 0) {
+                container.html(`<span class="text-xs text-slate-400 italic">No custom items saved yet.</span>`);
+                return;
+            }
+
+            customProds.forEach(p => {
+                container.append(`
+                    <span class="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 text-amber-800 px-2.5 py-1 rounded-full text-[11px] font-bold">
+                        ${p.name}
+                        <button type="button" onclick="deleteCustomProduct('${p.id}', '${p.name.replace(/'/g, "\\'")}')" class="hover:text-rose-600 transition flex items-center justify-center">
+                            <i data-lucide="x" class="w-3 h-3"></i>
+                        </button>
+                    </span>
+                `);
+            });
+            lucide.createIcons();
+        }
+
+        async function updateProductSuggestions() {
+            const allTx = await dbGetAll('transactions');
+            const customProds = await dbGetAll('custom_products');
+            const products = new Set();
+            
+            customProds.forEach(cp => products.add(cp.name.trim()));
+
+            allTx.forEach(t => {
+                if(t.type === 'bazar' && t.items) {
+                    t.items.forEach(item => {
+                        if(item.item) products.add(item.item.trim());
+                    });
+                }
+            });
+
+            const dataList = $('#product-suggestions');
+            dataList.empty();
+            products.forEach(p => {
+                dataList.append(`<option value="${p}"></option>`);
+            });
+        }
+
+        async function loadData() {
+            startDateFilter = $('#start-date').val();
+            endDateFilter = $('#end-date').val();
+            
+            const allTx = await dbGetAll('transactions');
+            
+            transactions = allTx.filter(t => {
+                return t.date >= startDateFilter && t.date <= endDateFilter;
+            });
+            
+            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            updateDashboard();
+            renderLists();
+        }
+
+        function updateDashboard() {
+            let inc = 0, exp = 0, baz = 0, bills = 0;
+            const categoryTotals = {};
+
+            transactions.forEach(t => {
+                if(t.type === 'income') inc += t.amount;
+                if(t.type === 'expense') { exp += t.amount; categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount; }
+                if(t.type === 'bazar') { baz += t.amount; exp += t.amount; categoryTotals['Bazar'] = (categoryTotals['Bazar'] || 0) + t.amount; }
+                if(t.type === 'bill') { bills += t.amount; exp += t.paidAmount; categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.paidAmount; }
+            });
+
+            $('#dash-income').text(formatCurrency(inc));
+            $('#dash-expense').text(formatCurrency(exp));
+            $('#dash-bazar').text(formatCurrency(baz));
+            $('#dash-savings').text(formatCurrency(inc - exp));
+
+            $('#date-range-badge').text(`Showing: ${startDateFilter || 'Start'} to ${endDateFilter || 'End'}`);
+
+            // Update Budget Progress Bar
+            if (monthlyBudget > 0) {
+                const pct = Math.min(100, Math.round((exp / monthlyBudget) * 100));
+                $('#budget-progress-bar').css('width', `${pct}%`);
+                $('#budget-used-text').text(`Used: ${formatCurrency(exp)} (${pct}%)`);
+                $('#budget-remaining-text').text(`Remaining: ${formatCurrency(monthlyBudget - exp)}`);
+
+                if (pct >= 100) {
+                    $('#budget-badge').removeClass().addClass('px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700').text('Budget Exceeded!');
+                    $('#budget-progress-bar').removeClass('bg-indigo-600 bg-amber-500').addClass('bg-rose-600');
+                } else if (pct >= 80) {
+                    $('#budget-badge').removeClass().addClass('px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700').text('Near Limit');
+                    $('#budget-progress-bar').removeClass('bg-indigo-600 bg-rose-600').addClass('bg-amber-500');
+                } else {
+                    $('#budget-badge').removeClass().addClass('px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700').text(`Budget: ${formatCurrency(monthlyBudget)}`);
+                    $('#budget-progress-bar').removeClass('bg-amber-500 bg-rose-600').addClass('bg-indigo-600');
+                }
+            } else {
+                $('#budget-progress-bar').css('width', '0%');
+                $('#budget-badge').text('Budget Not Set (in Settings)');
+                $('#budget-used-text').text(`Used: ${formatCurrency(exp)}`);
+                $('#budget-remaining-text').text(`Target: N/A`);
+            }
+
+            updateChart(categoryTotals);
+
+            const recentContainer = $('#recent-transactions-list');
+            recentContainer.empty();
+            if (transactions.length === 0) {
+                recentContainer.html(`<div class="text-center py-8 text-xs text-slate-400">No recent transactions found.</div>`);
+            } else {
+                transactions.slice(0, 5).forEach(t => {
+                    const isInc = t.type === 'income';
+                    const icon = isInc ? 'trending-up' : (t.type === 'bazar' ? 'shopping-cart' : (t.type === 'bill' ? 'receipt' : 'trending-down'));
+                    const color = isInc ? 'emerald' : (t.type === 'bazar' ? 'amber' : (t.type === 'bill' ? 'blue' : 'rose'));
+                    
+                    recentContainer.append(`
+                        <div class="flex items-center justify-between p-3 bg-slate-50/80 rounded-2xl border border-slate-100">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 rounded-xl bg-${color}-100 text-${color}-600 flex items-center justify-center">
+                                    <i data-lucide="${icon}" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-xs text-slate-800 capitalize">${t.category || t.type}</p>
+                                    <p class="text-[10px] text-slate-400">${t.date}</p>
+                                </div>
+                            </div>
+                            <div class="font-black text-xs ${isInc ? 'text-emerald-600' : 'text-slate-800'}">
+                                ${isInc ? '+' : '-'}${formatCurrency(t.amount)}
+                            </div>
+                        </div>
+                    `);
+                });
+            }
+            lucide.createIcons();
+        }
+
+        function updateChart(dataObj) {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            if(currentChart) currentChart.destroy();
+            
+            const labels = Object.keys(dataObj);
+            const data = Object.values(dataObj);
+
+            if(labels.length === 0) {
+                currentChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: { labels: ['No Expense Data'], datasets: [{ data: [1], backgroundColor: ['#e2e8f0'] }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+                return;
+            }
+
+            currentChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#64748b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { family: 'Plus Jakarta Sans', size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        function renderLists() {
+            const types = ['bazar', 'expense', 'income', 'bill'];
+            types.forEach(type => {
+                const container = $(`#list-${type}`);
+                if(!container.length) return;
+                
+                const filtered = transactions.filter(t => t.type === type);
+                if(filtered.length === 0) {
+                    container.html(`<div class="text-center py-10 bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400 text-xs">No ${type} records in selected period.</div>`);
+                    return;
+                }
+
+                let html = '';
+                filtered.forEach(t => {
+                    const amtStr = formatCurrency(t.amount);
+                    let extraHtml = '';
+                    
+                    if(type === 'bill') {
+                        const dueAmt = t.amount - t.paidAmount;
+                        const dueStr = dueAmt > 0 ? `<span class="text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">Due: ${formatCurrency(dueAmt)}</span>` : '<span class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">Paid in Full</span>';
+                        extraHtml = `<div class="mt-2 flex items-center gap-2 text-xs">${dueStr} <span class="text-slate-400">Due Date: ${t.dueDate||'N/A'}</span></div>`;
+                    } else if (type === 'bazar' && t.items) {
+                        const itemsStr = t.items.map(i => `${i.item} (${i.qty})`).join(', ');
+                        extraHtml = `<div class="mt-1.5 text-xs text-slate-500 bg-slate-50 p-2 rounded-xl border border-slate-100 truncate">${itemsStr}</div>`;
+                    }
+
+                    html += `
+                    <div class="bg-white p-4 rounded-3xl shadow-2xs border border-slate-200/80 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-bold text-slate-900 text-base truncate">${t.category || t.vendor || 'Record'}</span>
+                                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${t.paymentMethod || 'Cash'}</span>
+                            </div>
+                            <div class="text-xs text-slate-400 mt-0.5 truncate">${t.date} ${t.vendor ? '• '+t.vendor : ''} ${t.notes ? '• '+t.notes : ''}</div>
+                            ${extraHtml}
+                        </div>
+                        <div class="flex sm:flex-col justify-between items-end shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
+                            <div class="font-black text-lg ${type === 'income' ? 'text-emerald-600' : 'text-slate-900'}">${amtStr}</div>
+                            <div class="flex items-center gap-1.5 mt-1">
+                                <button onclick="editRecord('${t.id}')" class="p-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition flex items-center justify-center"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                                <button onclick="deleteRecord('${t.id}')" class="p-2 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition flex items-center justify-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                container.html(html);
+            });
+            lucide.createIcons();
+        }
+
+        function switchTab(tabId) {
+            $('.view-section').removeClass('active');
+            $(`#view-${tabId}`).addClass('active');
+
+            $('.nav-tab').removeClass('text-indigo-600').addClass('text-slate-400');
+            $('.nav-tab div').removeClass('bg-indigo-50');
+
+            const activeBtn = $(`#tab-${tabId}`);
+            if(activeBtn.length) {
+                activeBtn.removeClass('text-slate-400').addClass('text-indigo-600');
+                activeBtn.find('div').addClass('bg-indigo-50');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Modal Controls & Form Logic
+        function openModal(type, record = null) {
+            $('#tx-modal').removeClass('hidden').addClass('flex');
+            $('body').css('overflow', 'hidden');
+
+            $('#tx-form')[0].reset();
+            $('#tx-id').val(record ? record.id : '');
+            $('#tx-type').val(type);
+            $('#tx-date').val(record ? record.date : formatSafeDate(new Date()));
+            
+            const catSelect = $('#tx-category');
+            catSelect.html(CATEGORIES[type].map(c => `<option value="${c}">${c}</option>`).join(''));
+
+            $('#group-amount').removeClass('hidden');
+            $('#group-bill-details').addClass('hidden');
+            $('#bazar-items-section').addClass('hidden');
+            $('#tx-amount').prop('readonly', false);
+
+            if (type === 'bill') {
+                $('#group-bill-details').removeClass('hidden');
+            } else if (type === 'bazar') {
+                $('#bazar-items-section').removeClass('hidden');
+                $('#tx-amount').prop('readonly', true);
+                bazarItems = record && record.items ? JSON.parse(JSON.stringify(record.items)) : [{item: '', qty: 1, rate: 0, total: 0}];
+                renderBazarItems();
+            }
+
+            if (record) {
+                $('#modal-title').text(`Edit ${type.toUpperCase()} Record`);
+                $('#tx-amount').val(record.amount);
+                $('#tx-category').val(record.category);
+                $('#tx-payment').val(record.paymentMethod);
+                $('#tx-vendor').val(record.vendor || '');
+                $('#tx-notes').val(record.notes || '');
+                if(type === 'bill') {
+                    $('#tx-due-date').val(record.dueDate || '');
+                    $('#tx-paid-amount').val(record.paidAmount || 0);
+                }
+            } else {
+                $('#modal-title').text(`Add ${type.toUpperCase()} Record`);
+            }
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            $('#tx-modal').addClass('hidden').removeClass('flex');
+            $('body').css('overflow', 'auto');
+        }
+
+        function renderBazarItems() {
+            let total = 0;
+            const html = bazarItems.map((it, i) => {
+                const rowTotal = it.qty * it.rate;
+                total += rowTotal;
+                return `
+                <div class="bg-white p-3 rounded-2xl border border-slate-200 relative shadow-2xs mt-2">
+                    <button type="button" onclick="removeBazarItem(${i})" class="absolute -top-2.5 -right-2.5 bg-rose-100 text-rose-600 p-1.5 rounded-full shadow-md hover:bg-rose-200 flex items-center justify-center z-10"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                    <div class="grid grid-cols-12 gap-2 text-xs">
+                        <div class="col-span-12 sm:col-span-5 flex flex-col gap-0.5">
+                            <label class="text-[10px] text-slate-400 font-bold">Item Name</label>
+                            <input type="text" list="product-suggestions" placeholder="e.g. Rice" value="${it.item}" onchange="updateBazarItem(${i}, 'item', this.value)" class="px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl w-full">
+                        </div>
+                        <div class="col-span-4 sm:col-span-2 flex flex-col gap-0.5">
+                            <label class="text-[10px] text-slate-400 font-bold">Qty/KG</label>
+                            <input type="number" step="0.1" placeholder="1" value="${it.qty}" onchange="updateBazarItem(${i}, 'qty', this.value)" class="px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl w-full font-bold">
+                        </div>
+                        <div class="col-span-4 sm:col-span-3 flex flex-col gap-0.5">
+                            <label class="text-[10px] text-slate-400 font-bold">Rate (${currencySymbol})</label>
+                            <input type="number" step="0.1" placeholder="0" value="${it.rate}" onchange="updateBazarItem(${i}, 'rate', this.value)" class="px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl w-full font-bold">
+                        </div>
+                        <div class="col-span-4 sm:col-span-2 flex flex-col justify-center items-end font-black text-indigo-700 pt-3 text-sm">
+                            ${formatCurrency(rowTotal)}
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+            
+            $('#bazar-items-container').html(html);
+            $('#bazar-total-display').text(`Total: ${formatCurrency(total)}`);
+            $('#tx-amount').val(total);
+            lucide.createIcons();
+        }
+
+        function addBazarItemRow() {
+            bazarItems.push({item: '', qty: 1, rate: 0, total: 0});
+            renderBazarItems();
+        }
+
+        function removeBazarItem(index) {
+            bazarItems.splice(index, 1);
+            renderBazarItems();
+        }
+
+        function updateBazarItem(index, field, value) {
+            bazarItems[index][field] = field === 'item' ? value : Number(value);
+            bazarItems[index].total = bazarItems[index].qty * bazarItems[index].rate;
+            renderBazarItems();
+        }
+
+        async function saveTransaction() {
+            const form = $('#tx-form')[0];
+            if(!form.checkValidity()) {
+                showToast("Please fill all required fields correctly.", "warning");
+                return;
+            }
+
+            const type = $('#tx-type').val();
+            
+            const record = {
+                id: $('#tx-id').val() || generateID(type),
+                type: type,
+                date: $('#tx-date').val(),
+                amount: Number($('#tx-amount').val() || 0),
+                category: $('#tx-category').val(),
+                paymentMethod: $('#tx-payment').val(),
+                vendor: $('#tx-vendor').val(),
+                notes: $('#tx-notes').val(),
+                timestamp: Date.now()
+            };
+
+            if (type === 'bill') {
+                record.dueDate = $('#tx-due-date').val();
+                record.paidAmount = Number($('#tx-paid-amount').val() || 0);
+            } else if (type === 'bazar') {
+                record.items = bazarItems;
+            }
+
+            try {
+                await dbSave(record, 'transactions');
+                closeModal();
+                await loadData();
+                await updateProductSuggestions();
+                showToast(`${type.toUpperCase()} record saved successfully!`, "success");
+            } catch (e) {
+                showToast("Error saving record.", "error");
+                console.error(e);
+            }
+        }
+
+        async function deleteRecord(id) {
+            showConfirm("Delete Record", "Are you sure you want to delete this financial record?", async () => {
+                await dbDelete(id, 'transactions');
+                await loadData();
+                showToast("Record deleted successfully.", "info");
+            });
+        }
+
+        async function editRecord(id) {
+            const record = transactions.find(t => t.id === id);
+            if(record) {
+                openModal(record.type, record);
+            }
+        }
+
+        function exportPDF() {
+            if(transactions.length === 0) {
+                showToast("No data available to export for this date range.", "warning");
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(16);
+            doc.text(`${profileName} - Finance Report`, 14, 20);
+            doc.setFontSize(10);
+            doc.text(`Period: ${startDateFilter} to ${endDateFilter} | Currency: ${currencySymbol}`, 14, 27);
+            
+            const tableColumn = ["Date", "Type", "Category", "Payment", `Amount (${currencySymbol})`, "Details"];
+            const tableRows = [];
+
+            transactions.forEach(t => {
+                let details = t.vendor || t.notes || '';
+                if(t.type === 'bazar' && t.items) {
+                    details = t.items.map(i => `${i.item}(${i.qty})`).join(', ');
+                }
+                const txData = [
+                    t.date,
+                    t.type.toUpperCase(),
+                    t.category,
+                    t.paymentMethod,
+                    t.amount.toFixed(2),
+                    details
+                ];
+                tableRows.push(txData);
+            });
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 32,
+                theme: 'grid',
+                headStyles: { fillColor: [79, 70, 229] }
+            });
+
+            doc.save(`Finance_Report_${startDateFilter}_to_${endDateFilter}.pdf`);
+            showToast("PDF report downloaded!", "success");
+        }
+
+        function exportExcel() {
+            if(transactions.length === 0) {
+                showToast("No data available to export.", "warning");
+                return;
+            }
+            
+            const excelData = transactions.map(t => {
+                let details = t.vendor || t.notes || '';
+                if(t.type === 'bazar' && t.items) {
+                    details = t.items.map(i => `${i.item} x${i.qty}`).join(', ');
+                }
+                return {
+                    "Date": t.date,
+                    "Type": t.type.toUpperCase(),
+                    "Category": t.category,
+                    "Payment Method": t.paymentMethod,
+                    [`Amount (${currencySymbol})`]: t.amount,
+                    "Details / Items": details
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
+            
+            const wscols = [{wch:12}, {wch:10}, {wch:15}, {wch:15}, {wch:12}, {wch:40}];
+            worksheet['!cols'] = wscols;
+
+            XLSX.writeFile(workbook, `Finance_Report_${startDateFilter}_to_${endDateFilter}.xlsx`);
+            showToast("Excel spreadsheet downloaded!", "success");
+        }
+
+        function printReport() {
+            if(transactions.length === 0) {
+                showToast("No data available to print.", "warning");
+                return;
+            }
+            
+            let html = `
+            <html>
+            <head>
+                <title>${profileName} Report</title>
+                <style>
+                    body { font-family: sans-serif; padding: 20px; }
+                    h2 { text-align: center; color: #1e293b; margin-bottom: 5px; }
+                    .period { text-align: center; color: #64748b; margin-bottom: 20px; font-size: 14px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+                    th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+                    th { background-color: #4f46e5; color: white; }
+                    tr:nth-child(even) { background-color: #f8fafc; }
+                    .amt { text-align: right; font-weight: bold; }
+                </style>
+            </head>
+            <body>
+                <h2>${profileName} - Statement</h2>
+                <div class="period">Period: ${startDateFilter} to ${endDateFilter}</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Amount (${currencySymbol})</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            let totalInc = 0;
+            let totalExp = 0;
+
+            transactions.forEach(t => {
+                if(t.type === 'income') totalInc += t.amount;
+                else totalExp += t.amount;
+
+                let details = t.vendor || t.notes || '';
+                if(t.type === 'bazar' && t.items) {
+                    details = t.items.map(i => `${i.item} (${i.qty})`).join(', ');
+                }
+                
+                html += `
+                    <tr>
+                        <td>${t.date}</td>
+                        <td>${t.type.toUpperCase()}</td>
+                        <td>${t.category}</td>
+                        <td class="amt">${t.amount.toFixed(2)}</td>
+                        <td>${details}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                <div style="margin-top: 20px; text-align: right; font-size: 14px;">
+                    <p><strong>Total Income:</strong> ${currencySymbol} ${totalInc.toFixed(2)}</p>
+                    <p><strong>Total Expenses:</strong> ${currencySymbol} ${totalExp.toFixed(2)}</p>
+                    <p><strong>Net Savings:</strong> ${currencySymbol} ${(totalInc - totalExp).toFixed(2)}</p>
+                </div>
+                <script>
+                    window.onload = function() { window.print(); window.close(); }
+                <\/script>
+            </body>
+            </html>
+            `;
+
+            const printWin = window.open('', '_blank', 'width=800,height=600');
+            printWin.document.write(html);
+            printWin.document.close();
+        }
+
+        // Full Database Backup & Restore
+        async function exportJSONBackup() {
+            const allTx = await dbGetAll('transactions');
+            const customProds = await dbGetAll('custom_products');
+            const customCats = await dbGetAll('custom_categories');
+            const settings = await dbGetAll('app_settings');
+
+            const backupData = {
+                app: "Daily Bazar Manager",
+                version: "3.0",
+                exportedAt: new Date().toISOString(),
+                transactions: allTx,
+                customProducts: customProds,
+                customCategories: customCats,
+                settings: settings
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `Bazar_Backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("JSON Backup file downloaded!", "success");
+        }
+
+        async function importJSONBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.transactions && Array.isArray(data.transactions)) {
+                        for (let tx of data.transactions) {
+                            await dbSave(tx, 'transactions');
+                        }
+                    }
+                    if (data.customProducts && Array.isArray(data.customProducts)) {
+                        for (let p of data.customProducts) {
+                            await dbSave(p, 'custom_products');
+                        }
+                    }
+                    if (data.customCategories && Array.isArray(data.customCategories)) {
+                        for (let c of data.customCategories) {
+                            await dbSave(c, 'custom_categories');
+                        }
+                    }
+                    if (data.settings && Array.isArray(data.settings)) {
+                        for (let s of data.settings) {
+                            await dbSave(s, 'app_settings');
+                        }
+                    }
+                    await loadSettings();
+                    await loadData();
+                    await updateProductSuggestions();
+                    await renderCustomProductsList();
+                    await renderCustomCategoriesList();
+                    showToast("Backup restored successfully!", "success");
+                } catch (err) {
+                    showToast("Invalid JSON file format.", "error");
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function confirmClearAllData() {
+            showConfirm(
+                "Reset Database", 
+                "WARNING: This will permanently erase ALL transactions, custom products, categories and preferences! Proceed?", 
+                async () => {
+                    await dbClearStore('transactions');
+                    await dbClearStore('custom_products');
+                    await dbClearStore('custom_categories');
+                    await dbClearStore('app_settings');
+                    location.reload();
+                }
+            );
+        }
+    </script>
+</body>
+</html>
