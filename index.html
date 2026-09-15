@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Daily Bazar & Finance Manager Pro</title>
+    <title>Daily Bazar & Finance Manager Pro - Cloud Edition</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -127,7 +127,6 @@
             min-height: 44px;
         }
         
-        /* Fix native date input styling on mobile */
         input[type="date"] {
             appearance: none;
             -webkit-appearance: none;
@@ -168,662 +167,713 @@
             transform: scale(1);
         }
         
-        /* AI Suggestion Box & Voice Pulse */
-        .ai-suggestion-box {
-            background: linear-gradient(135deg, #f0fdfa, #e0e7ff);
-            border: 1px solid #c7d2fe;
-            border-radius: 16px;
-            padding: 16px;
-            margin-top: 16px;
+        /* Auth Screen Styling */
+        #auth-screen {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        #auth-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(1.05);
         }
 
-        @keyframes pulse-ring {
-            0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
-        }
-        .voice-active {
-            animation: pulse-ring 2s infinite;
+        /* Loading Overlay */
+        #global-loader {
+            transition: opacity 0.3s ease;
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen pb-safe-nav">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
 
-    <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 shadow-xs">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
-            
-            <!-- App Brand & User Custom Profile Title -->
-            <div class="flex items-center justify-between w-full md:w-auto shrink-0">
-                <div class="flex items-center gap-3 text-indigo-600 cursor-pointer" onclick="switchTab('dashboard')">
-                    <div id="brand-logo-container" class="bg-indigo-600 p-2.5 rounded-2xl text-white shadow-md shadow-indigo-100 flex items-center justify-center">
-                        <i data-lucide="database" class="w-5 h-5"></i>
-                    </div>
-                    <div>
-                        <span id="app-profile-name" class="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight block leading-tight">Secure Data Manager</span>
-                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Ledger & Bazar Manager</span>
-                    </div>
+    <!-- Authentication Screen (Visible by default until auth state is resolved) -->
+    <div id="auth-screen" class="fixed inset-0 bg-slate-50 z-[100] flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-200 flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="database" class="w-8 h-8"></i>
                 </div>
+                <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Data Manager Pro</h1>
+                <p class="text-sm text-slate-500 mt-1">Secure Cloud Sync & Collaboration</p>
             </div>
-            
-            <!-- Date Range Filter & Settings (Auto-saves on change) -->
-            <div class="flex items-center gap-1.5 sm:gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/70 w-full md:w-auto overflow-x-auto no-scrollbar scroll-smooth">
-                <select id="preset-date-range" onchange="handlePresetDateChange(true)" class="bg-white text-indigo-700 font-bold text-xs px-2.5 py-1.5 rounded-xl border border-slate-200/80 outline-none cursor-pointer shrink-0 shadow-2xs min-w-[100px]">
-                    <option value="this_month">This Month Cycle</option>
-                    <option value="last_month">Last Month Cycle</option>
-                    <option value="this_year">This Year</option>
-                    <option value="custom">Custom Range</option>
-                </select>
-                
-                <div class="flex items-center gap-1 shrink-0">
-                    <input type="date" id="start-date" class="bg-white text-slate-700 font-bold text-xs px-2 py-1.5 rounded-xl border border-slate-200 outline-none cursor-pointer shadow-2xs w-[115px] sm:w-auto" onchange="handleCustomDateChange()">
-                    <span class="text-slate-400 text-[10px] font-black uppercase mx-0.5">TO</span>
-                    <input type="date" id="end-date" class="bg-white text-slate-700 font-bold text-xs px-2 py-1.5 rounded-xl border border-slate-200 outline-none cursor-pointer shadow-2xs w-[115px] sm:w-auto" onchange="handleCustomDateChange()">
+
+            <!-- Auth Tabs -->
+            <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
+                <button id="tab-login" onclick="window.switchAuthTab('login')" class="flex-1 py-2 text-sm font-bold bg-white text-indigo-700 rounded-lg shadow-sm transition">Login</button>
+                <button id="tab-register" onclick="window.switchAuthTab('register')" class="flex-1 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 rounded-lg transition">Register</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="form-login" onsubmit="window.handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-600 ml-1">Email Address</label>
+                    <input type="email" id="login-email" required class="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 transition" placeholder="you@example.com">
                 </div>
-            </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-600 ml-1">Password</label>
+                    <input type="password" id="login-password" required class="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 transition" placeholder="••••••••">
+                </div>
+                <button type="submit" id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-md shadow-indigo-200 transition mt-2 flex items-center justify-center gap-2">
+                    Sign In to Account
+                </button>
+            </form>
+
+            <!-- Register Form (Hidden initially) -->
+            <form id="form-register" onsubmit="window.handleRegister(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="text-xs font-bold text-slate-600 ml-1">Email Address</label>
+                    <input type="email" id="reg-email" required class="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 transition" placeholder="you@example.com">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-600 ml-1">Password (Min 6 chars)</label>
+                    <input type="password" id="reg-password" required minlength="6" class="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 transition" placeholder="••••••••">
+                </div>
+                <button type="submit" id="btn-register" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold shadow-md shadow-emerald-200 transition mt-2 flex items-center justify-center gap-2">
+                    Create Cloud Account
+                </button>
+            </form>
+            
+            <div id="auth-error" class="mt-4 text-xs font-bold text-rose-500 text-center hidden"></div>
         </div>
-        
-        <!-- Advanced Search Bar -->
-        <div class="max-w-6xl mx-auto px-4 py-2 bg-white border-t border-slate-100">
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
-                </div>
-                <input type="text" id="global-search" onkeyup="loadData()" placeholder="Advanced Search: Find transactions by name, category, or note..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 transition">
-            </div>
-        </div>
-    </header>
+    </div>
 
-    <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6">
-        
-        <!-- ================= DASHBOARD VIEW ================= -->
-        <section id="view-dashboard" class="view-section active space-y-6">
-            
-            <!-- Export & Report Quick Actions Bar -->
-            <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
-                <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span id="date-range-badge" class="text-xs font-bold text-slate-600">Current View Summary</span>
-                </div>
-                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
-                    <button onclick="exportJSONBackup()" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md transition">
-                        <i data-lucide="save" class="w-4 h-4"></i> Save Database
-                    </button>
-                    <button onclick="exportPDF()" class="flex-1 sm:flex-none bg-rose-50 hover:bg-rose-100 text-rose-700 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-rose-200/60 transition">
-                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
-                    </button>
-                    <button onclick="exportExcel()" class="flex-1 sm:flex-none bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-emerald-200/60 transition">
-                        <i data-lucide="sheet" class="w-3.5 h-3.5"></i> Excel
-                    </button>
-                </div>
-            </div>
+    <!-- Global Loading Overlay -->
+    <div id="global-loader" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-[110] flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+        <p class="mt-4 font-bold text-slate-600 animate-pulse text-sm" id="loader-text">Connecting to Cloud...</p>
+    </div>
 
-            <!-- NEW ADVANCED FEATURE: Budget Progress Tracker -->
-            <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80">
-                <div class="flex justify-between items-end mb-2">
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-800">Monthly Budget Progress</h3>
-                        <p class="text-[10px] sm:text-xs text-slate-400">Total outgoings vs Set limit in settings</p>
-                    </div>
-                    <div id="budget-status-text" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md shadow-sm">0% Used</div>
-                </div>
-                <div class="w-full bg-slate-100 rounded-full h-3 mb-1 overflow-hidden shadow-inner">
-                    <div id="budget-progress-bar" class="bg-indigo-500 h-3 rounded-full transition-all duration-1000 ease-out relative" style="width: 0%">
-                        <div class="absolute inset-0 bg-white/20 w-full h-full animate-[pulse_2s_ease-in-out_infinite]"></div>
-                    </div>
-                </div>
-                <div class="flex justify-between items-center mt-2">
-                    <p id="budget-spent-text" class="text-[10px] sm:text-xs font-semibold text-slate-500">Spent: ৳ 0</p>
-                    <p id="budget-left-text" class="text-[10px] sm:text-xs font-semibold text-slate-500">Left: ৳ 0</p>
-                </div>
-            </div>
-
-            <!-- Summary Cards Grid -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/80 relative overflow-hidden group">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-[11px] sm:text-xs font-bold text-emerald-700 uppercase tracking-wider">Income</span>
-                        <div class="p-2 rounded-xl bg-emerald-50 text-emerald-600"><i data-lucide="trending-up" class="w-4 h-4"></i></div>
-                    </div>
-                    <div id="dash-income" class="text-base sm:text-xl md:text-2xl font-black text-slate-900 truncate">৳ 0.00</div>
-                    <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-1">Total earnings</div>
-                </div>
-
-                <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/80 relative overflow-hidden group">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-[11px] sm:text-xs font-bold text-rose-700 uppercase tracking-wider">Expenses</span>
-                        <div class="p-2 rounded-xl bg-rose-50 text-rose-600"><i data-lucide="trending-down" class="w-4 h-4"></i></div>
-                    </div>
-                    <div id="dash-expense" class="text-base sm:text-xl md:text-2xl font-black text-slate-900 truncate">৳ 0.00</div>
-                    <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-1">Total outgoings</div>
-                </div>
-
-                <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/80 relative overflow-hidden group">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-[11px] sm:text-xs font-bold text-amber-700 uppercase tracking-wider">Bazar</span>
-                        <div class="p-2 rounded-xl bg-amber-50 text-amber-600"><i data-lucide="shopping-cart" class="w-4 h-4"></i></div>
-                    </div>
-                    <div id="dash-bazar" class="text-base sm:text-xl md:text-2xl font-black text-slate-900 truncate">৳ 0.00</div>
-                    <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-1">Grocery & Market</div>
-                </div>
-
-                <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/80 relative overflow-hidden group">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-[11px] sm:text-xs font-bold text-indigo-700 uppercase tracking-wider">Net Savings</span>
-                        <div class="p-2 rounded-xl bg-indigo-50 text-indigo-600"><i data-lucide="wallet" class="w-4 h-4"></i></div>
-                    </div>
-                    <div id="dash-savings" class="text-base sm:text-xl md:text-2xl font-black text-indigo-600 truncate">৳ 0.00</div>
-                    <div class="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-1">Income - Expenses</div>
-                </div>
-            </div>
-
-            <!-- Visual Charts & Recent Activity -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Doughnut Expense Breakdown Chart -->
-                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col justify-between">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-800">Category Spending Overview</h3>
-                            <p class="text-xs text-slate-400">Distribution of expenses in selected date range</p>
+    <!-- Main Application Shell (Hidden until Auth) -->
+    <div id="app-shell" class="hidden pb-safe-nav">
+        <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 shadow-xs">
+            <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+                
+                <div class="flex items-center justify-between w-full md:w-auto shrink-0">
+                    <div class="flex items-center gap-3 text-indigo-600 cursor-pointer" onclick="window.switchTab('dashboard')">
+                        <div id="brand-logo-container" class="bg-indigo-600 p-2.5 rounded-2xl text-white shadow-md shadow-indigo-100 flex items-center justify-center relative">
+                            <i data-lucide="database" class="w-5 h-5"></i>
+                            <div class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full title='Cloud Synced'"></div>
                         </div>
-                        <i data-lucide="pie-chart" class="w-5 h-5 text-slate-400"></i>
-                    </div>
-                    <div class="relative h-64 sm:h-72 w-full flex items-center justify-center">
-                        <canvas id="expenseChart"></canvas>
+                        <div>
+                            <span id="app-profile-name" class="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight block leading-tight">Secure Data Manager</span>
+                            <span class="text-[10px] text-emerald-500 font-bold uppercase tracking-wider block flex items-center gap-1">
+                                <i data-lucide="cloud-check" class="w-3 h-3"></i> Cloud Synced
+                            </span>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Line Trend Chart -->
-                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col justify-between">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-800">Income vs Expense Trend</h3>
-                            <p class="text-xs text-slate-400">Daily flow over the selected period</p>
-                        </div>
-                        <i data-lucide="line-chart" class="w-5 h-5 text-slate-400"></i>
-                    </div>
-                    <div class="relative h-64 sm:h-72 w-full flex items-center justify-center">
-                        <canvas id="trendChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-base font-bold text-slate-800">Recent Transactions</h3>
-                        <span class="text-xs font-bold text-indigo-600 hover:underline cursor-pointer" onclick="switchTab('expense')">View All</span>
-                    </div>
-                    <div id="recent-transactions-list" class="space-y-2.5">
-                        <!-- Populated by JavaScript -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- AI Analysis System -->
-            <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2 text-indigo-700">
-                        <i data-lucide="brain-circuit" class="w-5 h-5"></i>
-                        <h3 class="text-base font-bold text-slate-800">AI Financial Analysis & Suggestions</h3>
-                    </div>
-                    <button onclick="generateAIAnalysis()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1">
-                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Analyze Data
-                    </button>
-                </div>
-                <div id="ai-analysis-content" class="text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-200 min-h-[100px] flex items-center justify-center transition-all">
-                    <div class="text-center">
-                        <i data-lucide="bar-chart-2" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i>
-                        <p>Click "Analyze Data" to get personalized financial insights, budget forecasts, and bazar suggestions based on your habits.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= BAZAR VIEW ================= -->
-        <section id="view-bazar" class="view-section space-y-4">
-            <div class="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
-                <div class="flex items-center gap-3">
-                    <div class="p-3 bg-amber-100 text-amber-700 rounded-2xl"><i data-lucide="shopping-cart" class="w-6 h-6"></i></div>
-                    <div>
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">Daily Bazar</h2>
-                        <p class="text-[11px] sm:text-xs text-slate-500">Track raw groceries, fish, meat & veggies</p>
-                    </div>
-                </div>
-                <button onclick="openModal('bazar')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md transition shrink-0">
-                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Bazar</span>
-                </button>
-            </div>
-            
-            <!-- AI Suggestion Box for Bazar -->
-            <div class="ai-suggestion-box flex items-start gap-3 shadow-sm">
-                <div class="p-2 bg-indigo-100 text-indigo-600 rounded-xl shrink-0">
-                    <i data-lucide="lightbulb" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h4 class="text-sm font-bold text-indigo-900 mb-1">AI Smart Suggestion</h4>
-                    <p id="ai-bazar-suggestion" class="text-xs text-indigo-800 leading-relaxed">Based on your history, you usually buy Rice and Dal around this time of the month. Want to add them?</p>
-                </div>
-            </div>
-
-            <div id="list-bazar" class="grid gap-3 mt-4"></div>
-        </section>
-
-        <!-- ================= EXPENSE VIEW ================= -->
-        <section id="view-expense" class="view-section space-y-4">
-            <div class="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
-                <div class="flex items-center gap-3">
-                    <div class="p-3 bg-rose-100 text-rose-700 rounded-2xl"><i data-lucide="trending-down" class="w-6 h-6"></i></div>
-                    <div>
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">Daily Expenses</h2>
-                        <p class="text-[11px] sm:text-xs text-slate-500">Personal & household outgoing expenditures</p>
-                    </div>
-                </div>
-                <button onclick="openModal('expense')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md transition shrink-0">
-                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Expense</span>
-                </button>
-            </div>
-            <div id="list-expense" class="grid gap-3"></div>
-        </section>
-
-        <!-- ================= INCOME VIEW ================= -->
-        <section id="view-income" class="view-section space-y-4">
-            <div class="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
-                <div class="flex items-center gap-3">
-                    <div class="p-3 bg-emerald-100 text-emerald-700 rounded-2xl"><i data-lucide="trending-up" class="w-6 h-6"></i></div>
-                    <div>
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">Income Records</h2>
-                        <p class="text-[11px] sm:text-xs text-slate-500">Salary, freelance earnings, investments</p>
-                    </div>
-                </div>
-                <button onclick="openModal('income')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md transition shrink-0">
-                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Income</span>
-                </button>
-            </div>
-            <div id="list-income" class="grid gap-3"></div>
-        </section>
-
-        <!-- ================= BILLS VIEW ================= -->
-        <section id="view-bills" class="view-section space-y-4">
-            <div class="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
-                <div class="flex items-center gap-3">
-                    <div class="p-3 bg-blue-100 text-blue-700 rounded-2xl"><i data-lucide="receipt" class="w-6 h-6"></i></div>
-                    <div>
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">Bills & Utilities</h2>
-                        <p class="text-[11px] sm:text-xs text-slate-500">Electricity, Gas, Internet, House Rent</p>
-                    </div>
-                </div>
-                <button onclick="openModal('bill')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md transition shrink-0">
-                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Bill</span>
-                </button>
-            </div>
-            <div id="list-bill" class="grid gap-3"></div>
-        </section>
-
-        <!-- ================= SETTINGS & CUSTOMIZATION VIEW ================= -->
-        <section id="view-settings" class="view-section space-y-6">
-            <div class="flex items-center gap-3 bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
-                <div class="p-3 bg-indigo-100 text-indigo-700 rounded-2xl"><i data-lucide="sliders" class="w-6 h-6"></i></div>
-                <div>
-                    <h2 class="text-xl font-bold text-slate-800">Settings & Database Management</h2>
-                    <p class="text-xs text-slate-500">Profile name, data saving, categories</p>
-                </div>
-            </div>
-
-            <!-- Database Backup & Restore - PROMINENT FEATURE -->
-            <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-md border-2 border-indigo-200 space-y-4 relative overflow-hidden">
-                <div class="absolute top-0 right-0 bg-indigo-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">Data Management</div>
-                <div class="flex items-center gap-3 text-indigo-700">
-                    <div class="p-2 bg-indigo-100 rounded-xl"><i data-lucide="hard-drive" class="w-6 h-6"></i></div>
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-800">Local & Cloud Storage</h3>
-                        <p class="text-xs text-slate-500">Save data to your device or backup.</p>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 pt-2">
-                    <button onclick="exportJSONBackup()" class="bg-indigo-600 text-white p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-indigo-700 transition font-bold shadow-md">
-                        <i data-lucide="download-cloud" class="w-6 h-6"></i> Save to Device
-                        <span class="text-[10px] font-normal opacity-80 text-center">Download .JSON file</span>
-                    </button>
+                <div class="flex items-center gap-1.5 sm:gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/70 w-full md:w-auto overflow-x-auto no-scrollbar scroll-smooth">
+                    <select id="preset-date-range" onchange="window.handlePresetDateChange(true)" class="bg-white text-indigo-700 font-bold text-xs px-2.5 py-1.5 rounded-xl border border-slate-200/80 outline-none cursor-pointer shrink-0 shadow-2xs min-w-[100px]">
+                        <option value="this_month">This Month Cycle</option>
+                        <option value="last_month">Last Month Cycle</option>
+                        <option value="this_year">This Year</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
                     
-                    <label class="bg-emerald-50 text-emerald-700 border-2 border-emerald-200 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-emerald-100 transition font-bold cursor-pointer">
-                        <i data-lucide="upload-cloud" class="w-6 h-6"></i> Restore / Load Data
-                        <span class="text-[10px] font-normal opacity-80 text-center">Select .JSON file</span>
-                        <input type="file" id="import-json-file" accept=".json" onchange="importJSONBackup(event)" class="hidden">
-                    </label>
-                </div>
-                
-                <!-- NEW: Delete All Data Feature -->
-                <div class="pt-4 border-t border-slate-100 mt-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h4 class="text-sm font-bold text-rose-700">Danger Zone</h4>
-                            <p class="text-xs text-slate-500">Permanently delete all data from this device.</p>
-                        </div>
-                        <button onclick="confirmDeleteAllData()" class="bg-rose-100 text-rose-700 hover:bg-rose-200 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-rose-200">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i> Erase All Data
-                        </button>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <input type="date" id="start-date" class="bg-white text-slate-700 font-bold text-xs px-2 py-1.5 rounded-xl border border-slate-200 outline-none cursor-pointer shadow-2xs w-[115px] sm:w-auto" onchange="window.handleCustomDateChange()">
+                        <span class="text-slate-400 text-[10px] font-black uppercase mx-0.5">TO</span>
+                        <input type="date" id="end-date" class="bg-white text-slate-700 font-bold text-xs px-2 py-1.5 rounded-xl border border-slate-200 outline-none cursor-pointer shadow-2xs w-[115px] sm:w-auto" onchange="window.handleCustomDateChange()">
                     </div>
                 </div>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                <!-- Profile & Budget Settings -->
-                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
-                    <div class="flex items-center gap-2 text-indigo-700">
-                        <i data-lucide="user-check" class="w-5 h-5"></i>
-                        <h3 class="text-base font-bold text-slate-800">Profile & Budget Limits</h3>
+            
+            <div class="max-w-6xl mx-auto px-4 py-2 bg-white border-t border-slate-100">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
                     </div>
+                    <input type="text" id="global-search" onkeyup="window.loadData()" placeholder="Advanced Search: Find transactions by name, category, or note..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 transition">
+                </div>
+            </div>
+        </header>
 
-                    <form onsubmit="handleSaveProfileSettings(event)" class="space-y-3.5">
-                        <div class="flex flex-col gap-1">
-                            <label class="text-xs font-bold text-slate-600">App Profile Title / Family Name</label>
-                            <input type="text" id="setting-profile-name" placeholder="e.g. Rahim's Family Bazar" required class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500">
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="flex flex-col gap-1">
-                                <label class="text-xs font-bold text-slate-600">Currency Symbol</label>
-                                <select id="setting-currency-symbol" class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer" onchange="toggleCustomCurrency()">
-                                    <option value="৳">৳ (BDT - Taka)</option>
-                                    <option value="$">$ (USD - Dollar)</option>
-                                    <option value="₹">₹ (INR - Rupee)</option>
-                                    <option value="€">€ (EUR - Euro)</option>
-                                    <option value="£">£ (GBP - Pound)</option>
-                                    <option value="custom">Custom...</option>
-                                </select>
-                            </div>
-                            <div class="flex flex-col gap-1 hidden" id="custom-currency-wrapper">
-                                <label class="text-xs font-bold text-slate-600">Custom Symbol</label>
-                                <input type="text" id="setting-custom-currency" placeholder="e.g. Tk" class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
-                            </div>
-                            <div class="flex flex-col gap-1">
-                                <label class="text-xs font-bold text-slate-600">Monthly Budget Threshold</label>
-                                <input type="number" id="setting-monthly-budget" placeholder="e.g. 25000" step="500" class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-100">
-                            <div class="flex flex-col gap-1">
-                                <label class="text-xs font-bold text-slate-600">Monthly Cycle Start Day</label>
-                                <input type="number" id="setting-cycle-start" min="1" max="28" placeholder="e.g. 1 or 25" value="1" title="Day your accounting month begins" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500">
-                                <span class="text-[10px] text-slate-400">Set to 25 if salary comes on 25th. This affects the "This Month" date filter.</span>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="w-full bg-slate-800 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-slate-900 transition shadow-xs flex items-center justify-center gap-2">
-                            <i data-lucide="check-circle" class="w-4 h-4"></i> Save Profile Preferences
+        <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6">
+            
+            <!-- ================= DASHBOARD VIEW ================= -->
+            <section id="view-dashboard" class="view-section active space-y-6">
+                
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span id="date-range-badge" class="text-xs font-bold text-slate-600">Current View Summary</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+                        <button onclick="window.exportPDF()" class="flex-1 sm:flex-none bg-rose-50 hover:bg-rose-100 text-rose-700 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-rose-200/60 transition">
+                            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
                         </button>
-                    </form>
+                        <button onclick="window.exportExcel()" class="flex-1 sm:flex-none bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-emerald-200/60 transition">
+                            <i data-lucide="sheet" class="w-3.5 h-3.5"></i> Excel
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Custom Category Manager -->
-                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80">
+                    <div class="flex justify-between items-end mb-2">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800">Monthly Budget Progress</h3>
+                            <p class="text-[10px] sm:text-xs text-slate-400">Total outgoings vs Set limit in settings</p>
+                        </div>
+                        <div id="budget-status-text" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md shadow-sm">0% Used</div>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-3 mb-1 overflow-hidden shadow-inner">
+                        <div id="budget-progress-bar" class="bg-indigo-500 h-3 rounded-full transition-all duration-1000 ease-out relative" style="width: 0%">
+                            <div class="absolute inset-0 bg-white/20 w-full h-full animate-[pulse_2s_ease-in-out_infinite]"></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-2">
+                        <p id="budget-spent-text" class="text-[10px] sm:text-xs font-semibold text-slate-500">Spent: ৳ 0</p>
+                        <p id="budget-left-text" class="text-[10px] sm:text-xs font-semibold text-slate-500">Left: ৳ 0</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/80 relative overflow-hidden group">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[11px] sm:text-xs font-bold text-emerald-700 uppercase tracking-wider">Income</span>
+                            <div class="p-2 rounded-xl bg-emerald-50 text-emerald-600"><i data-lucide="trending-up" class="w-4 h-4"></i></div>
+                        </div>
+                        <div id="dash-income" class="text-base sm:text-xl md:text-2xl font-black text-slate-900 truncate">৳ 0.00</div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/80 relative overflow-hidden group">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[11px] sm:text-xs font-bold text-rose-700 uppercase tracking-wider">Expenses</span>
+                            <div class="p-2 rounded-xl bg-rose-50 text-rose-600"><i data-lucide="trending-down" class="w-4 h-4"></i></div>
+                        </div>
+                        <div id="dash-expense" class="text-base sm:text-xl md:text-2xl font-black text-slate-900 truncate">৳ 0.00</div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/80 relative overflow-hidden group">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[11px] sm:text-xs font-bold text-amber-700 uppercase tracking-wider">Bazar</span>
+                            <div class="p-2 rounded-xl bg-amber-50 text-amber-600"><i data-lucide="shopping-cart" class="w-4 h-4"></i></div>
+                        </div>
+                        <div id="dash-bazar" class="text-base sm:text-xl md:text-2xl font-black text-slate-900 truncate">৳ 0.00</div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/80 relative overflow-hidden group">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[11px] sm:text-xs font-bold text-indigo-700 uppercase tracking-wider">Net Savings</span>
+                            <div class="p-2 rounded-xl bg-indigo-50 text-indigo-600"><i data-lucide="wallet" class="w-4 h-4"></i></div>
+                        </div>
+                        <div id="dash-savings" class="text-base sm:text-xl md:text-2xl font-black text-indigo-600 truncate">৳ 0.00</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800">Category Spending</h3>
+                            </div>
+                            <i data-lucide="pie-chart" class="w-5 h-5 text-slate-400"></i>
+                        </div>
+                        <div class="relative h-64 sm:h-72 w-full flex items-center justify-center">
+                            <canvas id="expenseChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800">Income vs Expense Trend</h3>
+                            </div>
+                            <i data-lucide="line-chart" class="w-5 h-5 text-slate-400"></i>
+                        </div>
+                        <div class="relative h-64 sm:h-72 w-full flex items-center justify-center">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-base font-bold text-slate-800">Recent Transactions</h3>
+                            <span class="text-xs font-bold text-indigo-600 hover:underline cursor-pointer" onclick="window.switchTab('expense')">View All</span>
+                        </div>
+                        <div id="recent-transactions-list" class="space-y-2.5">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= BAZAR VIEW ================= -->
+            <section id="view-bazar" class="view-section space-y-4">
+                <div class="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-amber-100 text-amber-700 rounded-2xl"><i data-lucide="shopping-cart" class="w-6 h-6"></i></div>
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-800">Daily Bazar</h2>
+                        </div>
+                    </div>
+                    <button onclick="window.openModal('bazar')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md transition shrink-0">
+                        <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Bazar</span>
+                    </button>
+                </div>
+                <div id="list-bazar" class="grid gap-3 mt-4"></div>
+            </section>
+
+            <!-- ================= EXPENSE VIEW ================= -->
+            <section id="view-expense" class="view-section space-y-4">
+                <div class="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-rose-100 text-rose-700 rounded-2xl"><i data-lucide="trending-down" class="w-6 h-6"></i></div>
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-800">Daily Expenses</h2>
+                        </div>
+                    </div>
+                    <button onclick="window.openModal('expense')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md transition shrink-0">
+                        <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Expense</span>
+                    </button>
+                </div>
+                <div id="list-expense" class="grid gap-3"></div>
+            </section>
+
+            <!-- ================= INCOME VIEW ================= -->
+            <section id="view-income" class="view-section space-y-4">
+                <div class="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-emerald-100 text-emerald-700 rounded-2xl"><i data-lucide="trending-up" class="w-6 h-6"></i></div>
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-800">Income Records</h2>
+                        </div>
+                    </div>
+                    <button onclick="window.openModal('income')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md transition shrink-0">
+                        <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Income</span>
+                    </button>
+                </div>
+                <div id="list-income" class="grid gap-3"></div>
+            </section>
+
+            <!-- ================= BILLS VIEW ================= -->
+            <section id="view-bills" class="view-section space-y-4">
+                <div class="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-blue-100 text-blue-700 rounded-2xl"><i data-lucide="receipt" class="w-6 h-6"></i></div>
+                        <div>
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-800">Bills & Utilities</h2>
+                        </div>
+                    </div>
+                    <button onclick="window.openModal('bill')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shadow-md transition shrink-0">
+                        <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Add Bill</span>
+                    </button>
+                </div>
+                <div id="list-bill" class="grid gap-3"></div>
+            </section>
+
+            <!-- ================= SETTINGS VIEW ================= -->
+            <section id="view-settings" class="view-section space-y-6">
+                <div class="flex items-center gap-3 bg-white p-4 rounded-3xl border border-slate-200/80 shadow-2xs">
+                    <div class="p-3 bg-indigo-100 text-indigo-700 rounded-2xl"><i data-lucide="sliders" class="w-6 h-6"></i></div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Settings & Cloud Account</h2>
+                    </div>
+                </div>
+
+                <!-- Cloud Account Status -->
+                <div class="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-3xl p-5 sm:p-6 shadow-sm border border-indigo-100 space-y-4 relative overflow-hidden">
                     <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3 text-indigo-700">
+                            <div class="p-2 bg-indigo-100 rounded-xl"><i data-lucide="cloud" class="w-6 h-6"></i></div>
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800">Cloud Sync Active</h3>
+                                <p class="text-xs text-slate-500">Logged in as: <span id="current-user-email" class="font-bold">...</span></p>
+                            </div>
+                        </div>
+                        <button onclick="window.handleLogout()" class="bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                            <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-600 mt-2 bg-white/50 p-2 rounded-lg border border-indigo-50">
+                        Your data is automatically saved to the cloud securely in real-time. Changes made on this device will reflect on any device you log into.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Profile Settings -->
+                    <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
+                        <div class="flex items-center gap-2 text-indigo-700">
+                            <i data-lucide="user-check" class="w-5 h-5"></i>
+                            <h3 class="text-base font-bold text-slate-800">Profile & Budget Limits</h3>
+                        </div>
+
+                        <form onsubmit="window.handleSaveProfileSettings(event)" class="space-y-3.5">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs font-bold text-slate-600">App Profile Title</label>
+                                <input type="text" id="setting-profile-name" placeholder="e.g. Family Budget" required class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-xs font-bold text-slate-600">Currency Symbol</label>
+                                    <select id="setting-currency-symbol" class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer">
+                                        <option value="৳">৳ (BDT)</option>
+                                        <option value="$">$ (USD)</option>
+                                        <option value="€">€ (EUR)</option>
+                                        <option value="£">£ (GBP)</option>
+                                    </select>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-xs font-bold text-slate-600">Monthly Budget</label>
+                                    <input type="number" id="setting-monthly-budget" placeholder="e.g. 25000" class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-1 pt-1 border-t border-slate-100">
+                                <label class="text-xs font-bold text-slate-600">Cycle Start Day</label>
+                                <input type="number" id="setting-cycle-start" min="1" max="28" value="1" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                            </div>
+                            <button type="submit" class="w-full bg-slate-800 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-slate-900 transition flex items-center justify-center gap-2">
+                                Save Preferences
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Category Manager -->
+                    <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/80 space-y-4">
                         <div class="flex items-center gap-2 text-indigo-700">
                             <i data-lucide="layers" class="w-5 h-5"></i>
                             <h3 class="text-base font-bold text-slate-800">Category Customizer</h3>
                         </div>
-                    </div>
-                    <p class="text-xs text-slate-400">Add custom categories for better tracking.</p>
-
-                    <form onsubmit="handleAddCustomCategory(event)" class="space-y-2">
-                        <div class="flex gap-2">
-                            <select id="new-cat-type" class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none shrink-0 w-1/3 cursor-pointer">
-                                <option value="expense">Expense</option>
-                                <option value="income">Income</option>
-                                <option value="bazar">Bazar</option>
-                                <option value="bill">Bill</option>
-                            </select>
-                            <input type="text" id="new-cat-name" placeholder="New Category Name" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500">
-                        </div>
-                        <button type="submit" class="w-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 py-2.5 rounded-xl font-bold text-sm transition shadow-xs flex items-center justify-center gap-2">
-                            <i data-lucide="plus" class="w-4 h-4"></i> Add Category
-                        </button>
-                    </form>
-
-                    <div class="pt-4 border-t border-slate-100">
-                        <h4 class="text-xs font-bold text-slate-600 mb-2">Existing Custom Categories</h4>
-                        <div id="custom-categories-list" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto no-scrollbar">
-                            <!-- Populated by JS -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Floating Action Button (FAB) for Mobile -->
-    <div class="fixed bottom-20 right-4 z-40 sm:hidden">
-        <div class="fab-backdrop fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="toggleFab()"></div>
-        <div class="fab-container relative flex flex-col items-end">
-            <div class="fab-options flex flex-col gap-3 mb-4 items-end absolute bottom-full right-0">
-                <button onclick="toggleFab(); openModal('bazar')" class="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full shadow-lg border border-slate-100 active:scale-95 transition-transform">
-                    <span class="text-sm font-bold text-slate-700">Add Bazar</span>
-                    <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center"><i data-lucide="shopping-cart" class="w-5 h-5"></i></div>
-                </button>
-                <button onclick="toggleFab(); openModal('expense')" class="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full shadow-lg border border-slate-100 active:scale-95 transition-transform">
-                    <span class="text-sm font-bold text-slate-700">Add Expense</span>
-                    <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center"><i data-lucide="trending-down" class="w-5 h-5"></i></div>
-                </button>
-                <button onclick="toggleFab(); openModal('income')" class="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full shadow-lg border border-slate-100 active:scale-95 transition-transform">
-                    <span class="text-sm font-bold text-slate-700">Add Income</span>
-                    <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
-                </button>
-                 <button onclick="toggleFab(); openModal('bill')" class="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full shadow-lg border border-slate-100 active:scale-95 transition-transform">
-                    <span class="text-sm font-bold text-slate-700">Add Bill</span>
-                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><i data-lucide="receipt" class="w-5 h-5"></i></div>
-                </button>
-            </div>
-            <button onclick="toggleFab()" class="fab-main-btn w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-700 active:scale-95 z-10 relative">
-                <i data-lucide="plus" class="w-6 h-6"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- MODIFIED: Fully visible Bottom Navigation Bar for Mobile -->
-    <nav class="fixed bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200/80 nav-safe-padding z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
-        <div class="max-w-6xl mx-auto flex justify-between items-center px-1 sm:px-2 py-1.5 sm:py-2 w-full">
-            <button onclick="switchTab('dashboard')" class="nav-btn flex-1 flex flex-col items-center justify-center py-1 text-indigo-600 font-bold transition rounded-xl" data-target="dashboard">
-                <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] sm:w-6 sm:h-6 mb-1"></i>
-                <span class="text-[9px] sm:text-[11px] leading-tight font-bold">Home</span>
-            </button>
-            <button onclick="switchTab('bazar')" class="nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 transition rounded-xl" data-target="bazar">
-                <i data-lucide="shopping-cart" class="w-[18px] h-[18px] sm:w-6 sm:h-6 mb-1"></i>
-                <span class="text-[9px] sm:text-[11px] leading-tight font-semibold">Bazar</span>
-            </button>
-            <button onclick="switchTab('expense')" class="nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 transition rounded-xl" data-target="expense">
-                <i data-lucide="trending-down" class="w-[18px] h-[18px] sm:w-6 sm:h-6 mb-1"></i>
-                <span class="text-[9px] sm:text-[11px] leading-tight font-semibold">Expense</span>
-            </button>
-            <button onclick="switchTab('income')" class="nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 transition rounded-xl" data-target="income">
-                <i data-lucide="trending-up" class="w-[18px] h-[18px] sm:w-6 sm:h-6 mb-1"></i>
-                <span class="text-[9px] sm:text-[11px] leading-tight font-semibold">Income</span>
-            </button>
-            <button onclick="switchTab('bills')" class="nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 transition rounded-xl" data-target="bills">
-                <i data-lucide="receipt" class="w-[18px] h-[18px] sm:w-6 sm:h-6 mb-1"></i>
-                <span class="text-[9px] sm:text-[11px] leading-tight font-semibold">Bills</span>
-            </button>
-            <button onclick="switchTab('settings')" class="nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 transition rounded-xl" data-target="settings">
-                <i data-lucide="settings" class="w-[18px] h-[18px] sm:w-6 sm:h-6 mb-1"></i>
-                <span class="text-[9px] sm:text-[11px] leading-tight font-semibold">Settings</span>
-            </button>
-        </div>
-    </nav>
-
-    <!-- Generic Input Modal with Voice AI Feature -->
-    <div id="input-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 transition-opacity duration-200">
-        <div class="bg-white w-full sm:max-w-md mobile-bottom-sheet shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-center p-4 sm:p-5 border-b border-slate-100 shrink-0 sticky top-0 bg-white z-10 rounded-t-3xl">
-                <h3 id="modal-title" class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <span id="modal-icon" class="p-1.5 rounded-lg bg-indigo-50 text-indigo-600"></span>
-                    <span id="modal-title-text">Add Entry</span>
-                </h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 bg-slate-50 p-2 rounded-full transition">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            
-            <form id="entry-form" onsubmit="saveEntry(event)" class="p-4 sm:p-5 space-y-4 overflow-y-auto no-scrollbar flex-1">
-                <input type="hidden" id="entry-type">
-                <input type="hidden" id="entry-id">
-                
-                <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-600">Date <span class="text-rose-500">*</span></label>
-                    <input type="date" id="entry-date" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 transition cursor-pointer">
-                </div>
-
-                <div class="space-y-1 relative">
-                    <div class="flex justify-between items-end">
-                        <label class="text-xs font-bold text-slate-600">Item / Description <span class="text-rose-500">*</span></label>
-                        <span class="text-[10px] text-indigo-500 font-bold hidden" id="voice-listening-status">Listening...</span>
-                    </div>
-                    <!-- Voice Input Field Setup -->
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="entry-name" placeholder="e.g. Fish, Electricity Bill, Salary..." required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 transition flex-1">
-                        
-                        <!-- Voice Command Button -->
-                        <button type="button" onclick="startVoiceInput()" id="voice-btn" class="shrink-0 w-11 h-11 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-xl flex items-center justify-center transition" title="Tap and speak to write">
-                            <i data-lucide="mic" class="w-5 h-5"></i>
-                        </button>
-                    </div>
-
-                    <!-- Quick Suggestions Container -->
-                    <div id="quick-suggestions" class="flex flex-wrap gap-2 mt-2 hidden">
-                        <!-- Populated based on type -->
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-1">
-                        <label class="text-xs font-bold text-slate-600">Amount <span class="text-rose-500">*</span></label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="text-slate-400 font-bold text-sm currency-display">৳</span>
+                        <form onsubmit="window.handleAddCustomCategory(event)" class="space-y-2">
+                            <div class="flex gap-2">
+                                <select id="new-cat-type" class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none shrink-0 w-1/3">
+                                    <option value="expense">Expense</option>
+                                    <option value="income">Income</option>
+                                    <option value="bazar">Bazar</option>
+                                    <option value="bill">Bill</option>
+                                </select>
+                                <input type="text" id="new-cat-name" placeholder="Category Name" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                             </div>
-                            <input type="number" id="entry-amount" placeholder="0.00" required min="0" step="0.01" class="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 transition">
+                            <button type="submit" class="w-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 py-2.5 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2">
+                                Add Category
+                            </button>
+                        </form>
+                        <div class="pt-4 border-t border-slate-100">
+                            <div id="custom-categories-list" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto no-scrollbar"></div>
                         </div>
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-xs font-bold text-slate-600">Category</label>
-                        <select id="entry-category" class="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 transition cursor-pointer">
-                            <!-- Populated dynamically -->
-                        </select>
-                    </div>
                 </div>
+            </section>
+        </main>
 
-                <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-600">Additional Note (Optional)</label>
-                    <textarea id="entry-note" placeholder="Write something..." rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 transition resize-none"></textarea>
-                </div>
-
-                <div class="pt-4 sticky bottom-0 bg-white pb-2 sm:pb-0">
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-md shadow-indigo-200 transition flex items-center justify-center gap-2 text-base">
-                        <i data-lucide="check" class="w-5 h-5"></i> Save Record
+        <!-- Floating Action Button -->
+        <div class="fixed bottom-20 right-4 z-40 sm:hidden">
+            <div class="fab-backdrop fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="window.toggleFab()"></div>
+            <div class="fab-container relative flex flex-col items-end">
+                <div class="fab-options flex flex-col gap-3 mb-4 items-end absolute bottom-full right-0">
+                    <button onclick="window.toggleFab(); window.openModal('bazar')" class="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full shadow-lg border border-slate-100">
+                        <span class="text-sm font-bold text-slate-700">Add Bazar</span>
+                        <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center"><i data-lucide="shopping-cart" class="w-5 h-5"></i></div>
+                    </button>
+                    <button onclick="window.toggleFab(); window.openModal('expense')" class="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full shadow-lg border border-slate-100">
+                        <span class="text-sm font-bold text-slate-700">Add Expense</span>
+                        <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center"><i data-lucide="trending-down" class="w-5 h-5"></i></div>
                     </button>
                 </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Custom Message Box (Replacement for alert/confirm) -->
-    <div id="message-box-container" class="message-box-backdrop">
-        <div class="message-box">
-            <div class="flex items-center gap-3 mb-4">
-                <div id="msg-icon-container" class="p-2 rounded-full bg-blue-100 text-blue-600">
-                    <i id="msg-icon" data-lucide="info" class="w-6 h-6"></i>
-                </div>
-                <h3 id="msg-title" class="text-lg font-bold text-slate-800">Message</h3>
-            </div>
-            <p id="msg-content" class="text-sm text-slate-600 mb-6"></p>
-            <div class="flex justify-end gap-3" id="msg-actions">
-                <button id="msg-cancel-btn" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 hidden">Cancel</button>
-                <button id="msg-confirm-btn" class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700">OK</button>
+                <button onclick="window.toggleFab()" class="fab-main-btn w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center relative z-10">
+                    <i data-lucide="plus" class="w-6 h-6"></i>
+                </button>
             </div>
         </div>
-    </div>
 
-    <script>
-        // === Core State & Defaults ===
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200/80 nav-safe-padding z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+            <div class="max-w-6xl mx-auto flex justify-between items-center px-1 sm:px-2 py-1.5 sm:py-2 w-full">
+                <button onclick="window.switchTab('dashboard')" class="nav-btn flex-1 flex flex-col items-center justify-center py-1 text-indigo-600 font-bold transition rounded-xl" data-target="dashboard">
+                    <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] sm:w-6 sm:h-6 mb-1"></i>
+                    <span class="text-[9px] sm:text-[11px] font-bold">Home</span>
+                </button>
+                <button onclick="window.switchTab('bazar')" class="nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 transition rounded-xl" data-target="bazar">
+                    <i data-lucide="shopping-cart" class="w-[18px] h-[18px] sm:w-6 sm:h-6 mb-1"></i>
+                    <span class="text-[9px] sm:text-[11px] font-semibold">Bazar</span>
+                </button>
+                <button onclick="window.switchTab('expense')" class="nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 transition rounded-xl" data-target="expense">
+                    <i data-lucide="trending-down" class="w-[18px] h-[18px] sm:w-6 sm:h-6 mb-1"></i>
+                    <span class="text-[9px] sm:text-[11px] font-semibold">Expense</span>
+                </button>
+                <button onclick="window.switchTab('income')" class="nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 transition rounded-xl" data-target="income">
+                    <i data-lucide="trending-up" class="w-[18px] h-[18px] sm:w-6 sm:h-6 mb-1"></i>
+                    <span class="text-[9px] sm:text-[11px] font-semibold">Income</span>
+                </button>
+                <button onclick="window.switchTab('bills')" class="nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 transition rounded-xl" data-target="bills">
+                    <i data-lucide="receipt" class="w-[18px] h-[18px] sm:w-6 sm:h-6 mb-1"></i>
+                    <span class="text-[9px] sm:text-[11px] font-semibold">Bills</span>
+                </button>
+                <button onclick="window.switchTab('settings')" class="nav-btn flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-600 transition rounded-xl" data-target="settings">
+                    <i data-lucide="settings" class="w-[18px] h-[18px] sm:w-6 sm:h-6 mb-1"></i>
+                    <span class="text-[9px] sm:text-[11px] font-semibold">Settings</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Entry Modal -->
+        <div id="input-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 transition-opacity duration-200">
+            <div class="bg-white w-full sm:max-w-md mobile-bottom-sheet shadow-2xl flex flex-col max-h-[90vh]">
+                <div class="flex justify-between items-center p-4 border-b border-slate-100 shrink-0 sticky top-0 bg-white z-10 rounded-t-3xl">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <span id="modal-icon"></span>
+                        <span id="modal-title-text">Add Entry</span>
+                    </h3>
+                    <button onclick="window.closeModal()" class="text-slate-400 bg-slate-50 p-2 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <form id="entry-form" onsubmit="window.saveEntry(event)" class="p-4 space-y-4 overflow-y-auto no-scrollbar flex-1">
+                    <input type="hidden" id="entry-type">
+                    <input type="hidden" id="entry-id">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-600">Date</label>
+                        <input type="date" id="entry-date" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                    </div>
+                    <div class="space-y-1 relative">
+                        <label class="text-xs font-bold text-slate-600">Item / Description</label>
+                        <input type="text" id="entry-name" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none flex-1">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-600">Amount</label>
+                            <input type="number" id="entry-amount" required min="0" step="0.01" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-600">Category</label>
+                            <select id="entry-category" class="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"></select>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-600">Note (Optional)</label>
+                        <textarea id="entry-note" rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none resize-none"></textarea>
+                    </div>
+                    <div class="pt-4 sticky bottom-0 bg-white pb-2 sm:pb-0">
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl font-bold transition flex items-center justify-center gap-2">
+                            Save Record
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Custom Message Box -->
+        <div id="message-box-container" class="message-box-backdrop">
+            <div class="message-box">
+                <div class="flex items-center gap-3 mb-4">
+                    <div id="msg-icon-container" class="p-2 rounded-full bg-blue-100 text-blue-600">
+                        <i id="msg-icon" data-lucide="info" class="w-6 h-6"></i>
+                    </div>
+                    <h3 id="msg-title" class="text-lg font-bold text-slate-800">Message</h3>
+                </div>
+                <p id="msg-content" class="text-sm text-slate-600 mb-6"></p>
+                <div class="flex justify-end gap-3" id="msg-actions">
+                    <button id="msg-cancel-btn" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hidden">Cancel</button>
+                    <button id="msg-confirm-btn" class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600">OK</button>
+                </div>
+            </div>
+        </div>
+    </div> <!-- End App Shell -->
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration (Uses provided globals)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'bazar-pro-cloud';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            // Fallback mock config to prevent immediate crash if running outside specific environment
+            apiKey: "mock-key", projectId: "mock-project"
+        };
+        const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Core State
+        let currentUserId = null;
+        let unsubscribeSnapshot = null;
+        
         let appData = {
             transactions: [],
             profile: {
                 name: "Secure Data Manager",
                 currency: "৳",
                 monthlyBudget: 0,
-                cycleStartDay: 1, // Determines when the "month" resets
-                lastUpdate: new Date().toISOString()
+                cycleStartDay: 1
             },
-            customCategories: {
-                expense: [],
-                income: [],
-                bazar: [],
-                bill: []
-            }
+            customCategories: { expense: [], income: [], bazar: [], bill: [] }
         };
 
         const defaultCategories = {
-            expense: ["Food", "Transport", "Health", "Education", "Shopping", "Entertainment", "Other"],
-            income: ["Salary", "Business", "Freelance", "Investment", "Gift", "Other"],
-            bazar: ["Vegetables", "Fish & Meat", "Grocery", "Fruits", "Snacks", "Other"],
-            bill: ["Electricity", "Gas", "Water", "Internet", "House Rent", "Mobile Recharge", "Other"]
-        };
-
-        const quickSuggestions = {
-            bazar: ["Rice", "Dal", "Onion", "Potato", "Chicken", "Beef", "Fish", "Oil", "Salt"],
-            expense: ["Rickshaw", "Bus Fare", "Medicine", "Doctor Fee", "Cloth", "Restaurant"],
-            income: ["Salary", "Bonus", "Freelance Payment"],
-            bill: ["Electricity Bill", "Internet Bill", "Gas Bill", "Rent"]
+            expense: ["Food", "Transport", "Health", "Education", "Shopping", "Other"],
+            income: ["Salary", "Business", "Investment", "Other"],
+            bazar: ["Vegetables", "Fish & Meat", "Grocery", "Other"],
+            bill: ["Electricity", "Gas", "Water", "Internet", "Rent", "Other"]
         };
 
         let expenseChartInstance = null;
         let trendChartInstance = null;
-        let voiceRecognition = null;
 
-        // Initialize App on Load
-        document.addEventListener('DOMContentLoaded', () => {
-            loadFromLocalStorage();
-            lucide.createIcons();
-            
-            // Start Voice recognition API if supported
-            if ('webkitSpeechRecognition' in window) {
-                voiceRecognition = new webkitSpeechRecognition();
-                voiceRecognition.continuous = false;
-                voiceRecognition.interimResults = false;
-                
-                voiceRecognition.onresult = function(event) {
-                    const transcript = event.results[0][0].transcript;
-                    document.getElementById('entry-name').value = transcript;
-                    document.getElementById('voice-listening-status').classList.add('hidden');
-                    document.getElementById('voice-btn').classList.remove('voice-active');
-                };
+        // UI Helpers
+        const hideLoader = () => document.getElementById('global-loader').classList.add('hidden');
+        const showLoader = (text) => {
+            const l = document.getElementById('global-loader');
+            l.classList.remove('hidden');
+            if(text) document.getElementById('loader-text').innerText = text;
+        };
 
-                voiceRecognition.onerror = function() {
-                    document.getElementById('voice-listening-status').classList.add('hidden');
-                    document.getElementById('voice-btn').classList.remove('voice-active');
-                };
+        // --- AUTHENTICATION LOGIC ---
+
+        window.switchAuthTab = (tab) => {
+            if (tab === 'login') {
+                document.getElementById('form-login').classList.remove('hidden');
+                document.getElementById('form-register').classList.add('hidden');
+                document.getElementById('tab-login').className = "flex-1 py-2 text-sm font-bold bg-white text-indigo-700 rounded-lg shadow-sm transition";
+                document.getElementById('tab-register').className = "flex-1 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 rounded-lg transition";
+            } else {
+                document.getElementById('form-login').classList.add('hidden');
+                document.getElementById('form-register').classList.remove('hidden');
+                document.getElementById('tab-register').className = "flex-1 py-2 text-sm font-bold bg-white text-indigo-700 rounded-lg shadow-sm transition";
+                document.getElementById('tab-login').className = "flex-1 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 rounded-lg transition";
             }
+            document.getElementById('auth-error').classList.add('hidden');
+        };
 
-            // Bind defaults and trigger initial load
-            applyProfileSettingsToUI();
-            handlePresetDateChange(false); // Initializes default date boundaries and calls loadData()
+        const showError = (msg) => {
+            const errEl = document.getElementById('auth-error');
+            errEl.innerText = msg;
+            errEl.classList.remove('hidden');
+            hideLoader();
+        };
+
+        window.handleLogin = async (e) => {
+            e.preventDefault();
+            showLoader('Signing in...');
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (error) {
+                showError("Login failed: " + error.message);
+            }
+        };
+
+        window.handleRegister = async (e) => {
+            e.preventDefault();
+            showLoader('Creating account...');
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-password').value;
+            try {
+                await createUserWithEmailAndPassword(auth, email, pass);
+            } catch (error) {
+                showError("Registration failed: " + error.message);
+            }
+        };
+
+        window.handleLogout = async () => {
+            showLoader('Signing out...');
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+            try {
+                await signOut(auth);
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        // --- DATA SYNC LOGIC (Firestore JSON approach) ---
+        
+        // Save entire appData object as a JSON document to the user's specific path
+        async function syncToCloud() {
+            if (!currentUserId) return;
+            // CRITICAL PATH RULE: /artifacts/{appId}/users/{userId}/{collectionName}
+            const docRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'data_store', 'main_json');
+            try {
+                await setDoc(docRef, appData);
+            } catch (e) {
+                console.error("Error syncing to cloud", e);
+                window.showMessage("Sync Error", "Failed to save data to cloud.", "warning");
+            }
+        }
+
+        // Listen for changes from the cloud
+        function setupRealtimeListener() {
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+            
+            const docRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'data_store', 'main_json');
+            
+            unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    // Update local state with cloud state
+                    appData = docSnap.data();
+                    
+                    // Ensure structure integrity for older docs
+                    if (!appData.transactions) appData.transactions = [];
+                    if (!appData.customCategories) appData.customCategories = { expense: [], income: [], bazar: [], bill: [] };
+                    if (!appData.profile) appData.profile = { name: "User", currency: "৳", monthlyBudget: 0, cycleStartDay: 1 };
+                } else {
+                    // New user, push default template
+                    syncToCloud();
+                }
+                
+                // Refresh UI with new data
+                window.loadData();
+                hideLoader();
+                
+                // Switch UI from Auth to App
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-shell').classList.remove('hidden');
+                lucide.createIcons();
+
+            }, (error) => {
+                console.error("Snapshot error:", error);
+                hideLoader();
+            });
+        }
+
+        // Auth State Observer
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                document.getElementById('current-user-email').innerText = user.email || 'Anonymous User';
+                showLoader('Syncing with Cloud...');
+                setupRealtimeListener();
+            } else {
+                currentUserId = null;
+                if (unsubscribeSnapshot) unsubscribeSnapshot();
+                // Show Auth UI, hide App
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('app-shell').classList.add('hidden');
+                hideLoader();
+            }
         });
 
-        // Date Logic implementing "Monthly Cycle Start Day"
-        function getCycleDates(preset) {
+        // Initial Boot Sequence
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            
+            // Handle pre-provided token
+            if (initialToken) {
+                try {
+                    showLoader('Authenticating...');
+                    await signInWithCustomToken(auth, initialToken);
+                } catch (e) {
+                    console.error("Custom token failed", e);
+                    hideLoader();
+                }
+            } else {
+                hideLoader();
+            }
+        });
+
+        // --- UI AND BUSINESS LOGIC (Attached to window for HTML onclicks) ---
+
+        window.getCycleDates = (preset) => {
             const today = new Date();
             let cycleStartDay = parseInt(appData.profile.cycleStartDay) || 1;
-            cycleStartDay = Math.min(Math.max(cycleStartDay, 1), 28); // Force valid boundary 1-28
-
-            // Determine if the current date has passed this month's cycle start day
-            let currentMonthStart = new Date(today.getFullYear(), today.getMonth(), cycleStartDay);
+            cycleStartDay = Math.min(Math.max(cycleStartDay, 1), 28);
             
+            let currentMonthStart = new Date(today.getFullYear(), today.getMonth(), cycleStartDay);
             if (today.getDate() < cycleStartDay) {
-                // We are still in the "previous" month's cycle
                 currentMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, cycleStartDay);
             }
-
             let start, end;
 
             if (preset === 'this_month') {
@@ -833,73 +883,58 @@
                 start = new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() - 1, cycleStartDay);
                 end = new Date(start.getFullYear(), start.getMonth() + 1, cycleStartDay - 1, 23, 59, 59);
             } else if (preset === 'this_year') {
-                // Year generally spans from Jan 1 to Dec 31
                 start = new Date(today.getFullYear(), 0, 1);
                 end = new Date(today.getFullYear(), 11, 31, 23, 59, 59);
             }
 
-            // Helper to format as YYYY-MM-DD
             const formatLocal = (dateObj) => {
                 const tzOffset = dateObj.getTimezoneOffset() * 60000;
                 return new Date(dateObj - tzOffset).toISOString().split('T')[0];
             };
-
             return { start: formatLocal(start), end: formatLocal(end) };
-        }
+        };
 
-        function handlePresetDateChange(forceRefresh = true) {
+        window.handlePresetDateChange = (forceRefresh = true) => {
             const preset = document.getElementById('preset-date-range').value;
-            
             if (preset !== 'custom') {
-                const dates = getCycleDates(preset);
+                const dates = window.getCycleDates(preset);
                 document.getElementById('start-date').value = dates.start;
                 document.getElementById('end-date').value = dates.end;
             }
-            
-            if (forceRefresh) loadData();
-        }
+            if (forceRefresh) window.loadData();
+        };
 
-        function handleCustomDateChange() {
+        window.handleCustomDateChange = () => {
             document.getElementById('preset-date-range').value = 'custom';
-            loadData();
-        }
+            window.loadData();
+        };
 
-        function saveToLocalStorage() {
-            appData.profile.lastUpdate = new Date().toISOString();
-            localStorage.setItem('dailyBazarProData', JSON.stringify(appData));
-            loadData();
-        }
+        window.formatCurrency = (amount) => {
+            return `${appData.profile.currency} ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        };
 
-        function loadFromLocalStorage() {
-            const stored = localStorage.getItem('dailyBazarProData');
-            if (stored) {
-                try {
-                    const parsed = JSON.parse(stored);
-                    appData = { ...appData, ...parsed };
-                    
-                    // Migrate old data missing customs
-                    if (!appData.customCategories) {
-                        appData.customCategories = { expense: [], income: [], bazar: [], bill: [] };
-                    }
-                } catch(e) {
-                    console.error("Data parse error", e);
-                }
-            }
-        }
+        window.loadData = () => {
+            if(!currentUserId) return; // Guard
+            
+            // Apply Profile settings to UI inputs
+            document.getElementById('app-profile-name').innerText = appData.profile.name;
+            document.getElementById('setting-profile-name').value = appData.profile.name;
+            document.getElementById('setting-monthly-budget').value = appData.profile.monthlyBudget;
+            document.getElementById('setting-currency-symbol').value = appData.profile.currency;
+            document.getElementById('setting-cycle-start').value = appData.profile.cycleStartDay;
+            
+            // Ensure dates are set if empty
+            if(!document.getElementById('start-date').value) window.handlePresetDateChange(false);
 
-        function getFilteredTransactions() {
             const startVal = document.getElementById('start-date').value;
             const endVal = document.getElementById('end-date').value;
             const searchKeyword = document.getElementById('global-search').value.toLowerCase();
             
-            let filtered = appData.transactions;
+            let filtered = appData.transactions || [];
 
             if (startVal && endVal) {
-                const startDate = new Date(startVal);
-                startDate.setHours(0, 0, 0, 0);
-                const endDate = new Date(endVal);
-                endDate.setHours(23, 59, 59, 999);
-                
+                const startDate = new Date(startVal); startDate.setHours(0, 0, 0, 0);
+                const endDate = new Date(endVal); endDate.setHours(23, 59, 59, 999);
                 filtered = filtered.filter(t => {
                     const tDate = new Date(t.date);
                     return tDate >= startDate && tDate <= endDate;
@@ -914,340 +949,184 @@
                 );
             }
 
-            // Sort newest first
-            return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-        }
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        function loadData() {
-            applyProfileSettingsToUI();
-            
-            const filtered = getFilteredTransactions();
             let sums = { expense: 0, income: 0, bazar: 0, bill: 0 };
-            
-            filtered.forEach(t => {
-                if (sums[t.type] !== undefined) sums[t.type] += Number(t.amount);
-            });
+            filtered.forEach(t => { if (sums[t.type] !== undefined) sums[t.type] += Number(t.amount); });
 
-            // "Bazar" and "Bill" usually count as an outgoings/expenses
             const totalOutgoings = sums.expense + sums.bazar + sums.bill;
             const netSavings = sums.income - totalOutgoings;
 
-            // Update Dashboard Overview
-            document.getElementById('dash-income').innerText = formatCurrency(sums.income);
-            document.getElementById('dash-expense').innerText = formatCurrency(totalOutgoings);
-            document.getElementById('dash-bazar').innerText = formatCurrency(sums.bazar);
-            document.getElementById('dash-savings').innerText = formatCurrency(netSavings);
+            document.getElementById('dash-income').innerText = window.formatCurrency(sums.income);
+            document.getElementById('dash-expense').innerText = window.formatCurrency(totalOutgoings);
+            document.getElementById('dash-bazar').innerText = window.formatCurrency(sums.bazar);
+            document.getElementById('dash-savings').innerText = window.formatCurrency(netSavings);
 
-            // Update Budget Progress Tracker
+            // Budget Update
             const budget = Number(appData.profile.monthlyBudget) || 0;
             const budgetBar = document.getElementById('budget-progress-bar');
-            const budgetStatusText = document.getElementById('budget-status-text');
-            const budgetSpentText = document.getElementById('budget-spent-text');
-            const budgetLeftText = document.getElementById('budget-left-text');
             
             if (budget > 0) {
                 const percent = Math.min((totalOutgoings / budget) * 100, 100);
                 budgetBar.style.width = `${percent}%`;
-                budgetStatusText.innerText = `${percent.toFixed(1)}% Used`;
-                budgetSpentText.innerText = `Spent: ${formatCurrency(totalOutgoings)}`;
-                
+                document.getElementById('budget-status-text').innerText = `${percent.toFixed(1)}% Used`;
+                document.getElementById('budget-spent-text').innerText = `Spent: ${window.formatCurrency(totalOutgoings)}`;
                 const left = budget - totalOutgoings;
-                budgetLeftText.innerText = left >= 0 ? `Left: ${formatCurrency(left)}` : `Over by: ${formatCurrency(Math.abs(left))}`;
-                
-                // Change bar color based on danger zone
-                if (percent > 90) budgetBar.className = "bg-rose-500 h-3 rounded-full transition-all duration-1000 ease-out relative";
-                else if (percent > 75) budgetBar.className = "bg-amber-500 h-3 rounded-full transition-all duration-1000 ease-out relative";
-                else budgetBar.className = "bg-indigo-500 h-3 rounded-full transition-all duration-1000 ease-out relative";
+                document.getElementById('budget-left-text').innerText = left >= 0 ? `Left: ${window.formatCurrency(left)}` : `Over by: ${window.formatCurrency(Math.abs(left))}`;
+                budgetBar.className = percent > 90 ? "bg-rose-500 h-3 rounded-full transition-all duration-1000" : percent > 75 ? "bg-amber-500 h-3 rounded-full transition-all duration-1000" : "bg-indigo-500 h-3 rounded-full transition-all duration-1000";
             } else {
                 budgetBar.style.width = '0%';
-                budgetStatusText.innerText = 'No limit set';
-                budgetSpentText.innerText = `Spent: ${formatCurrency(totalOutgoings)}`;
-                budgetLeftText.innerText = 'Left: N/A';
+                document.getElementById('budget-status-text').innerText = 'No limit';
             }
 
-            renderTransactions('bazar', filtered);
-            renderTransactions('expense', filtered);
-            renderTransactions('income', filtered);
-            renderTransactions('bill', filtered);
-            
-            renderRecentTransactions(filtered);
+            renderLists(filtered);
             updateCharts(filtered);
-        }
+            renderCustomCategoriesList();
+        };
 
-        function formatCurrency(amount) {
-            let sym = appData.profile.currency;
-            if (sym === 'custom') sym = appData.profile.customCurrency || '';
-            return `${sym} ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        }
+        function renderLists(filtered) {
+            ['bazar', 'expense', 'income', 'bill'].forEach(type => {
+                const container = document.getElementById(`list-${type}`);
+                container.innerHTML = '';
+                const data = filtered.filter(t => t.type === type);
+                
+                if (data.length === 0) {
+                    container.innerHTML = `<div class="p-8 text-center bg-white border border-slate-200/50 rounded-2xl"><p class="text-slate-400 text-sm">No records found.</p></div>`;
+                    return;
+                }
+                data.forEach(t => {
+                    const isOut = type !== 'income';
+                    const colorCls = isOut ? 'text-rose-600' : 'text-emerald-600';
+                    const bgCls = isOut ? 'bg-rose-50' : 'bg-emerald-50';
+                    const icon = type === 'bazar'?'shopping-cart':type==='income'?'trending-up':type==='bill'?'receipt':'trending-down';
+                    
+                    container.innerHTML += `
+                        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-indigo-200 transition">
+                            <div class="flex items-center gap-3 overflow-hidden pr-2">
+                                <div class="p-2.5 rounded-xl ${bgCls} shrink-0"><i data-lucide="${icon}" class="w-4 h-4 ${colorCls}"></i></div>
+                                <div class="overflow-hidden">
+                                    <h4 class="font-bold text-sm text-slate-800 truncate">${t.name}</h4>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">${t.category}</span>
+                                        <span class="text-[10px] text-slate-400">${new Date(t.date).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-end shrink-0 gap-2">
+                                <span class="font-black ${colorCls} text-sm">${isOut?'-':'+'} ${window.formatCurrency(t.amount)}</span>
+                                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="window.editEntry('${t.id}')" class="p-1 text-slate-400 hover:text-indigo-600"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                                    <button onclick="window.deleteEntry('${t.id}')" class="p-1 text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            });
 
-        function renderTransactions(type, allFilteredData) {
-            const container = document.getElementById(`list-${type}`);
-            container.innerHTML = '';
-            
-            const data = allFilteredData.filter(t => t.type === type);
-            
-            if (data.length === 0) {
-                container.innerHTML = `
-                    <div class="p-8 text-center bg-white border border-slate-200/50 rounded-2xl">
-                        <i data-lucide="inbox" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
-                        <p class="text-slate-400 text-sm font-medium">No records found for this period.</p>
-                    </div>
-                `;
-                lucide.createIcons();
-                return;
-            }
-
-            data.forEach(t => {
-                const dateObj = new Date(t.date);
-                const isOut = type !== 'income';
-                const sign = isOut ? '-' : '+';
-                const colorCls = isOut ? 'text-rose-600' : 'text-emerald-600';
-                const bgCls = isOut ? 'bg-rose-50' : 'bg-emerald-50';
-
-                const card = document.createElement('div');
-                card.className = "bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-indigo-200 transition";
-                card.innerHTML = `
-                    <div class="flex items-center gap-3 overflow-hidden pr-2">
-                        <div class="p-2.5 rounded-xl ${bgCls} shrink-0">
-                            <i data-lucide="${getIconForType(type)}" class="w-4 h-4 ${colorCls}"></i>
-                        </div>
-                        <div class="overflow-hidden">
-                            <h4 class="font-bold text-sm text-slate-800 truncate">${t.name}</h4>
-                            <div class="flex items-center gap-2 mt-0.5">
-                                <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md truncate max-w-[80px] sm:max-w-[120px]">${t.category}</span>
-                                <span class="text-[10px] text-slate-400 font-medium whitespace-nowrap">${dateObj.toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
+            // Recent
+            const rContainer = document.getElementById('recent-transactions-list');
+            rContainer.innerHTML = '';
+            filtered.slice(0, 5).forEach(t => {
+                const isOut = t.type !== 'income';
+                const icon = t.type === 'bazar'?'shopping-cart':t.type==='income'?'trending-up':t.type==='bill'?'receipt':'trending-down';
+                rContainer.innerHTML += `
+                    <div class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><i data-lucide="${icon}" class="w-3.5 h-3.5 text-slate-500"></i></div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-700">${t.name}</p>
+                                <p class="text-[10px] text-slate-400">${t.category}</p>
                             </div>
                         </div>
-                    </div>
-                    <div class="flex flex-col items-end shrink-0 gap-2">
-                        <span class="font-black ${colorCls} text-sm whitespace-nowrap">${sign} ${formatCurrency(t.amount)}</span>
-                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="editEntry('${t.id}')" class="p-1 text-slate-400 hover:text-indigo-600 transition"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
-                            <button onclick="deleteEntry('${t.id}')" class="p-1 text-slate-400 hover:text-rose-600 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
+                        <span class="text-xs font-black ${isOut?'text-rose-600':'text-emerald-600'}">${isOut?'-':'+'}${window.formatCurrency(t.amount)}</span>
+                    </div>`;
             });
             lucide.createIcons();
-        }
-
-        function renderRecentTransactions(filtered) {
-            const container = document.getElementById('recent-transactions-list');
-            container.innerHTML = '';
-            
-            const recent = filtered.slice(0, 5); // top 5
-            
-            if (recent.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No recent activity.</p>`;
-                return;
-            }
-
-            recent.forEach(t => {
-                const isOut = t.type !== 'income';
-                const colorCls = isOut ? 'text-rose-600' : 'text-emerald-600';
-                
-                const item = document.createElement('div');
-                item.className = "flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100";
-                item.innerHTML = `
-                    <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                            <i data-lucide="${getIconForType(t.type)}" class="w-3.5 h-3.5 text-slate-500"></i>
-                        </div>
-                        <div class="truncate pr-2">
-                            <p class="text-xs font-bold text-slate-700 truncate">${t.name}</p>
-                            <p class="text-[10px] text-slate-400">${t.category} &bull; ${new Date(t.date).toLocaleDateString()}</p>
-                        </div>
-                    </div>
-                    <span class="text-xs font-black ${colorCls} shrink-0">${isOut?'-':'+'}${formatCurrency(t.amount)}</span>
-                `;
-                container.appendChild(item);
-            });
-            lucide.createIcons();
-        }
-
-        function getIconForType(type) {
-            switch(type) {
-                case 'bazar': return 'shopping-cart';
-                case 'expense': return 'trending-down';
-                case 'income': return 'trending-up';
-                case 'bill': return 'receipt';
-                default: return 'circle';
-            }
         }
 
         function updateCharts(filtered) {
-            // Category Breakdown Chart (Expenses only - including Bazar and Bills)
-            const expenseTypes = filtered.filter(t => t.type !== 'income');
-            const catMap = {};
-            expenseTypes.forEach(t => {
-                catMap[t.category] = (catMap[t.category] || 0) + Number(t.amount);
-            });
-            
-            const catLabels = Object.keys(catMap);
-            const catData = Object.values(catMap);
+            const expData = filtered.filter(t => t.type !== 'income');
+            let catMap = {};
+            expData.forEach(t => catMap[t.category] = (catMap[t.category] || 0) + Number(t.amount));
 
             if (expenseChartInstance) expenseChartInstance.destroy();
-            const ctxDoughnut = document.getElementById('expenseChart').getContext('2d');
-            expenseChartInstance = new Chart(ctxDoughnut, {
+            expenseChartInstance = new Chart(document.getElementById('expenseChart'), {
                 type: 'doughnut',
                 data: {
-                    labels: catLabels.length ? catLabels : ['No Data'],
+                    labels: Object.keys(catMap).length ? Object.keys(catMap) : ['No Data'],
                     datasets: [{
-                        data: catData.length ? catData : [1],
-                        backgroundColor: catData.length ? 
-                            ['#4f46e5', '#ec4899', '#f59e0b', '#10b981', '#6366f1', '#f43f5e', '#3b82f6', '#8b5cf6'] : 
-                            ['#e2e8f0'],
-                        borderWidth: 0,
-                        hoverOffset: 4
+                        data: Object.values(catMap).length ? Object.values(catMap) : [1],
+                        backgroundColor: Object.values(catMap).length ? ['#4f46e5', '#ec4899', '#f59e0b', '#10b981', '#6366f1', '#f43f5e'] : ['#e2e8f0'],
+                        borderWidth: 0
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } },
-                    cutout: '70%'
-                }
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
             });
 
-            // Trend Chart (Income vs Total Expense per day)
-            // Group by Date
-            const trendMap = {};
-            // Reverse so oldest is first for chart flow from left to right
-            const sortedAsc = [...filtered].sort((a,b) => new Date(a.date) - new Date(b.date));
-            
-            sortedAsc.forEach(t => {
-                const dateKey = t.date;
-                if (!trendMap[dateKey]) trendMap[dateKey] = { income: 0, expense: 0 };
-                
-                if (t.type === 'income') {
-                    trendMap[dateKey].income += Number(t.amount);
-                } else {
-                    trendMap[dateKey].expense += Number(t.amount);
-                }
+            let trendMap = {};
+            [...filtered].sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(t => {
+                if (!trendMap[t.date]) trendMap[t.date] = { income: 0, expense: 0 };
+                t.type === 'income' ? trendMap[t.date].income += Number(t.amount) : trendMap[t.date].expense += Number(t.amount);
             });
-
-            const trendLabels = Object.keys(trendMap).map(d => new Date(d).toLocaleDateString(undefined, {month:'short', day:'numeric'}));
-            const trendIncome = Object.values(trendMap).map(v => v.income);
-            const trendExpense = Object.values(trendMap).map(v => v.expense);
 
             if (trendChartInstance) trendChartInstance.destroy();
-            const ctxLine = document.getElementById('trendChart').getContext('2d');
-            trendChartInstance = new Chart(ctxLine, {
+            trendChartInstance = new Chart(document.getElementById('trendChart'), {
                 type: 'line',
                 data: {
-                    labels: trendLabels.length ? trendLabels : ['-'],
+                    labels: Object.keys(trendMap).length ? Object.keys(trendMap).map(d=>new Date(d).toLocaleDateString(undefined,{month:'short',day:'numeric'})) : ['-'],
                     datasets: [
-                        {
-                            label: 'Income',
-                            data: trendIncome.length ? trendIncome : [0],
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Expense',
-                            data: trendExpense.length ? trendExpense : [0],
-                            borderColor: '#f43f5e',
-                            backgroundColor: 'rgba(244, 63, 94, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        }
+                        { label: 'Income', data: Object.values(trendMap).length ? Object.values(trendMap).map(v=>v.income) : [0], borderColor: '#10b981', tension: 0.4 },
+                        { label: 'Expense', data: Object.values(trendMap).length ? Object.values(trendMap).map(v=>v.expense) : [0], borderColor: '#f43f5e', tension: 0.4 }
                     ]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-                        y: { border: { dash: [4, 4] }, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } }
-                    },
-                    plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } } },
-                    interaction: { mode: 'index', intersect: false }
-                }
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false } }, plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } } } }
             });
         }
 
-        function openModal(type, idToEdit = null) {
-            document.getElementById('input-modal').classList.remove('hidden');
-            // Timeout to allow display block before opacity transition
-            setTimeout(() => {
-                document.getElementById('input-modal').classList.remove('opacity-0');
-            }, 10);
-
+        window.openModal = (type, idToEdit = null) => {
+            const m = document.getElementById('input-modal');
+            m.classList.remove('hidden');
+            setTimeout(() => m.classList.remove('opacity-0'), 10);
+            
             document.getElementById('entry-type').value = type;
             document.getElementById('entry-id').value = idToEdit || '';
+            document.getElementById('modal-title-text').innerText = idToEdit ? 'Edit Entry' : 'Add ' + type.charAt(0).toUpperCase() + type.slice(1);
             
-            const titleEl = document.getElementById('modal-title-text');
-            const iconEl = document.getElementById('modal-icon');
-            
-            // Set Titles and Icon
-            titleEl.innerText = idToEdit ? 'Edit ' + capitalize(type) : 'Add ' + capitalize(type);
-            iconEl.innerHTML = `<i data-lucide="${getIconForType(type)}" class="w-5 h-5"></i>`;
-            iconEl.className = `p-1.5 rounded-lg ${type==='income'?'bg-emerald-50 text-emerald-600': type==='bazar'?'bg-amber-50 text-amber-600': type==='bill'?'bg-blue-50 text-blue-600':'bg-rose-50 text-rose-600'}`;
-
-            // Populate Categories
             const catSelect = document.getElementById('entry-category');
             catSelect.innerHTML = '';
-            
-            // Merge defaults and custom categories
-            const catList = [...(defaultCategories[type] || []), ...(appData.customCategories[type] || [])];
-            
-            catList.forEach(c => {
-                catSelect.innerHTML += `<option value="${c}">${c}</option>`;
-            });
+            const cats = [...(defaultCategories[type] || []), ...(appData.customCategories[type] || [])];
+            cats.forEach(c => catSelect.innerHTML += `<option value="${c}">${c}</option>`);
 
-            // Populate Quick Suggestions
-            const qContainer = document.getElementById('quick-suggestions');
-            qContainer.innerHTML = '';
-            if (quickSuggestions[type] && !idToEdit) {
-                qContainer.classList.remove('hidden');
-                quickSuggestions[type].forEach(s => {
-                    qContainer.innerHTML += `<span onclick="document.getElementById('entry-name').value='${s}'" class="bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 text-[10px] px-2 py-1 rounded-md cursor-pointer border border-slate-200 transition">${s}</span>`;
-                });
-            } else {
-                qContainer.classList.add('hidden');
-            }
-
-            // Reset or Load Form Data
             if (idToEdit) {
-                const entry = appData.transactions.find(t => t.id === idToEdit);
-                if (entry) {
-                    document.getElementById('entry-date').value = entry.date;
-                    document.getElementById('entry-name').value = entry.name;
-                    document.getElementById('entry-amount').value = entry.amount;
-                    document.getElementById('entry-category').value = entry.category;
-                    document.getElementById('entry-note').value = entry.note || '';
+                const t = appData.transactions.find(x => x.id === idToEdit);
+                if (t) {
+                    document.getElementById('entry-date').value = t.date;
+                    document.getElementById('entry-name').value = t.name;
+                    document.getElementById('entry-amount').value = t.amount;
+                    document.getElementById('entry-category').value = t.category;
+                    document.getElementById('entry-note').value = t.note || '';
                 }
             } else {
-                // Pre-fill today's date adjusted to timezone
-                const tzOffset = new Date().getTimezoneOffset() * 60000;
-                const localISOTime = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
-                document.getElementById('entry-date').value = localISOTime;
+                const localDate = new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                document.getElementById('entry-date').value = localDate;
                 document.getElementById('entry-name').value = '';
                 document.getElementById('entry-amount').value = '';
                 document.getElementById('entry-note').value = '';
             }
+        };
 
-            lucide.createIcons();
-        }
+        window.closeModal = () => {
+            const m = document.getElementById('input-modal');
+            m.classList.add('opacity-0');
+            setTimeout(() => m.classList.add('hidden'), 200);
+        };
 
-        function closeModal() {
-            const modal = document.getElementById('input-modal');
-            modal.classList.add('opacity-0');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 200); // match transition duration
-        }
-
-        function saveEntry(e) {
+        window.saveEntry = async (e) => {
             e.preventDefault();
-            
             const id = document.getElementById('entry-id').value;
             const type = document.getElementById('entry-type').value;
-            const entryData = {
-                id: id || generateId(),
+            const newEntry = {
+                id: id || Date.now().toString(36) + Math.random().toString(36).substring(2),
                 type: type,
                 date: document.getElementById('entry-date').value,
                 name: document.getElementById('entry-name').value,
@@ -1257,346 +1136,97 @@
             };
 
             if (id) {
-                const index = appData.transactions.findIndex(t => t.id === id);
-                if(index > -1) appData.transactions[index] = entryData;
+                const idx = appData.transactions.findIndex(t => t.id === id);
+                if (idx > -1) appData.transactions[idx] = newEntry;
             } else {
-                appData.transactions.push(entryData);
+                appData.transactions.push(newEntry);
             }
+            
+            window.closeModal();
+            // Sync to Firebase (Triggers realtime update)
+            await syncToCloud();
+        };
 
-            saveToLocalStorage();
-            closeModal();
-            showMessage('Success', `${capitalize(type)} saved successfully.`, 'success');
-        }
-
-        function editEntry(id) {
+        window.editEntry = (id) => {
             const t = appData.transactions.find(x => x.id === id);
-            if(t) {
-                openModal(t.type, id);
-            }
-        }
+            if(t) window.openModal(t.type, id);
+        };
 
-        function deleteEntry(id) {
-            showMessage('Confirm Delete', 'Are you sure you want to delete this record? This action cannot be undone.', 'warning', () => {
+        window.deleteEntry = (id) => {
+            window.showMessage('Confirm Delete', 'Are you sure you want to delete this record?', 'warning', async () => {
                 appData.transactions = appData.transactions.filter(t => t.id !== id);
-                saveToLocalStorage();
+                await syncToCloud();
             });
-        }
+        };
 
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-
-        function capitalize(str) {
-            return str.charAt(0).toUpperCase() + str.slice(1);
-        }
-
-        function switchTab(tabId) {
+        window.switchTab = (tabId) => {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.getElementById(`view-${tabId}`).classList.add('active');
-            
             document.querySelectorAll('.nav-btn').forEach(el => {
-                if (el.dataset.target === tabId) {
-                    el.classList.add('text-indigo-600');
-                    el.classList.remove('text-slate-400');
-                } else {
-                    el.classList.remove('text-indigo-600');
-                    el.classList.add('text-slate-400');
-                }
+                el.classList.toggle('text-indigo-600', el.dataset.target === tabId);
+                el.classList.toggle('text-slate-400', el.dataset.target !== tabId);
             });
-            
-            if (tabId === 'settings') {
-                renderCustomCategoriesList();
-            }
-        }
+        };
 
-        function toggleFab() {
-            const container = document.querySelector('.fab-container');
-            const backdrop = document.querySelector('.fab-backdrop');
-            container.classList.toggle('open');
-            backdrop.classList.toggle('active');
-        }
+        window.toggleFab = () => {
+            document.querySelector('.fab-container').classList.toggle('open');
+            document.querySelector('.fab-backdrop').classList.toggle('active');
+        };
 
-        function applyProfileSettingsToUI() {
-            document.getElementById('app-profile-name').innerText = appData.profile.name || "Secure Data Manager";
-            document.getElementById('setting-profile-name').value = appData.profile.name || "";
-            document.getElementById('setting-monthly-budget').value = appData.profile.monthlyBudget || "";
-            document.getElementById('setting-cycle-start').value = appData.profile.cycleStartDay || "1";
-
-            let sym = appData.profile.currency;
-            if (sym === 'custom') {
-                document.getElementById('setting-currency-symbol').value = 'custom';
-                document.getElementById('custom-currency-wrapper').classList.remove('hidden');
-                document.getElementById('setting-custom-currency').value = appData.profile.customCurrency || '';
-                sym = appData.profile.customCurrency || '';
-            } else {
-                document.getElementById('setting-currency-symbol').value = sym;
-                document.getElementById('custom-currency-wrapper').classList.add('hidden');
-            }
-
-            // Update all currency display spans
-            document.querySelectorAll('.currency-display').forEach(el => el.innerText = sym);
-        }
-
-        function toggleCustomCurrency() {
-            const val = document.getElementById('setting-currency-symbol').value;
-            if (val === 'custom') {
-                document.getElementById('custom-currency-wrapper').classList.remove('hidden');
-            } else {
-                document.getElementById('custom-currency-wrapper').classList.add('hidden');
-            }
-        }
-
-        function handleSaveProfileSettings(e) {
+        window.handleSaveProfileSettings = async (e) => {
             e.preventDefault();
             appData.profile.name = document.getElementById('setting-profile-name').value;
             appData.profile.monthlyBudget = document.getElementById('setting-monthly-budget').value;
             appData.profile.currency = document.getElementById('setting-currency-symbol').value;
             appData.profile.cycleStartDay = document.getElementById('setting-cycle-start').value;
-            
-            if (appData.profile.currency === 'custom') {
-                appData.profile.customCurrency = document.getElementById('setting-custom-currency').value;
-            }
-            
-            saveToLocalStorage();
-            handlePresetDateChange(true); // Cycle start day might have changed, recalculate dates
-            showMessage('Settings Saved', 'Your profile preferences have been updated.', 'success');
-        }
+            await syncToCloud();
+            window.showMessage('Saved', 'Profile saved to cloud.', 'success');
+        };
 
-        function handleAddCustomCategory(e) {
+        window.handleAddCustomCategory = async (e) => {
             e.preventDefault();
             const type = document.getElementById('new-cat-type').value;
             const name = document.getElementById('new-cat-name').value.trim();
-            
-            if (!name) return;
-            
-            if (!appData.customCategories[type]) appData.customCategories[type] = [];
-            
-            if (appData.customCategories[type].includes(name) || (defaultCategories[type] && defaultCategories[type].includes(name))) {
-                showMessage('Duplicate', 'Category already exists.', 'warning');
-                return;
-            }
+            if (!name || appData.customCategories[type].includes(name)) return;
             
             appData.customCategories[type].push(name);
-            saveToLocalStorage();
             document.getElementById('new-cat-name').value = '';
-            renderCustomCategoriesList();
-            showMessage('Added', `Category "${name}" added to ${type}.`, 'success');
-        }
+            await syncToCloud();
+        };
+        
+        window.deleteCustomCategory = async (type, name) => {
+            appData.customCategories[type] = appData.customCategories[type].filter(c => c !== name);
+            await syncToCloud();
+        };
 
         function renderCustomCategoriesList() {
             const container = document.getElementById('custom-categories-list');
             container.innerHTML = '';
-            
             Object.keys(appData.customCategories).forEach(type => {
                 appData.customCategories[type].forEach(cat => {
-                    const badge = document.createElement('div');
-                    badge.className = "flex items-center gap-1 bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200";
-                    badge.innerHTML = `
-                        <span class="font-bold opacity-50 uppercase text-[9px] mr-1">${type.substring(0,3)}</span>
-                        ${cat}
-                        <button onclick="deleteCustomCategory('${type}', '${cat}')" class="ml-1 text-slate-400 hover:text-rose-600"><i data-lucide="x" class="w-3 h-3"></i></button>
-                    `;
-                    container.appendChild(badge);
+                    container.innerHTML += `
+                        <div class="flex items-center gap-1 bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200">
+                            <span class="font-bold opacity-50 uppercase text-[9px] mr-1">${type.substring(0,3)}</span> ${cat}
+                            <button onclick="window.deleteCustomCategory('${type}', '${cat}')" class="ml-1 text-slate-400 hover:text-rose-600"><i data-lucide="x" class="w-3 h-3"></i></button>
+                        </div>`;
                 });
             });
             lucide.createIcons();
-            
-            if (container.innerHTML === '') {
-                container.innerHTML = `<span class="text-xs text-slate-400">No custom categories added yet.</span>`;
-            }
         }
 
-        function deleteCustomCategory(type, name) {
-            appData.customCategories[type] = appData.customCategories[type].filter(c => c !== name);
-            saveToLocalStorage();
-            renderCustomCategoriesList();
-        }
-
-        function startVoiceInput() {
-            if (voiceRecognition) {
-                document.getElementById('voice-listening-status').classList.remove('hidden');
-                document.getElementById('voice-btn').classList.add('voice-active');
-                voiceRecognition.start();
-            } else {
-                showMessage('Not Supported', 'Voice input is not supported in your browser.', 'warning');
-            }
-        }
-
-        function showMessage(title, content, type = 'info', onConfirm = null) {
+        window.showMessage = (title, content, type = 'info', onConfirm = null) => {
             const container = document.getElementById('message-box-container');
-            const titleEl = document.getElementById('msg-title');
-            const contentEl = document.getElementById('msg-content');
-            const iconEl = document.getElementById('msg-icon');
-            const iconCont = document.getElementById('msg-icon-container');
-            const cancelBtn = document.getElementById('msg-cancel-btn');
+            document.getElementById('msg-title').innerText = title;
+            document.getElementById('msg-content').innerText = content;
             const confirmBtn = document.getElementById('msg-confirm-btn');
-
-            titleEl.innerText = title;
-            contentEl.innerText = content;
-
-            // Type styling
-            if (type === 'warning') {
-                iconCont.className = 'p-2 rounded-full bg-rose-100 text-rose-600';
-                iconEl.setAttribute('data-lucide', 'alert-triangle');
-                cancelBtn.classList.remove('hidden');
-                confirmBtn.className = 'px-4 py-2 rounded-xl text-sm font-bold text-white bg-rose-600 hover:bg-rose-700';
-            } else if (type === 'success') {
-                iconCont.className = 'p-2 rounded-full bg-emerald-100 text-emerald-600';
-                iconEl.setAttribute('data-lucide', 'check-circle');
-                cancelBtn.classList.add('hidden');
-                confirmBtn.className = 'px-4 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700';
-            } else {
-                iconCont.className = 'p-2 rounded-full bg-blue-100 text-blue-600';
-                iconEl.setAttribute('data-lucide', 'info');
-                cancelBtn.classList.add('hidden');
-                confirmBtn.className = 'px-4 py-2 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700';
-            }
-            lucide.createIcons();
-
+            const cancelBtn = document.getElementById('msg-cancel-btn');
+            
+            cancelBtn.classList.toggle('hidden', type !== 'warning');
+            
             container.classList.add('active');
-
-            // Handle Clicks
-            confirmBtn.onclick = () => {
-                container.classList.remove('active');
-                if (onConfirm) onConfirm();
-            };
-            cancelBtn.onclick = () => {
-                container.classList.remove('active');
-            };
-        }
-
-        // Mock AI Logic
-        function generateAIAnalysis() {
-            const content = document.getElementById('ai-analysis-content');
-            content.innerHTML = `<div class="flex flex-col items-center justify-center py-4"><div class="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div><p class="text-xs text-indigo-600 font-bold mt-2">Analyzing your financial patterns...</p></div>`;
-            
-            setTimeout(() => {
-                const filtered = getFilteredTransactions();
-                let topCat = "None";
-                let topAmt = 0;
-                let cats = {};
-                
-                filtered.filter(t => t.type !== 'income').forEach(t => {
-                    cats[t.category] = (cats[t.category] || 0) + Number(t.amount);
-                    if (cats[t.category] > topAmt) {
-                        topAmt = cats[t.category];
-                        topCat = t.category;
-                    }
-                });
-
-                let insight = "";
-                if (topAmt > 0) {
-                    insight = `Your highest expense area in the selected period is <strong>${topCat}</strong> (${formatCurrency(topAmt)}). Consider reviewing expenses here. Based on usual patterns, keeping this under 30% of income yields better savings.`;
-                } else {
-                    insight = "Not enough expense data to generate insights for this period. Add more transactions to get personalized advice.";
-                }
-
-                content.innerHTML = `
-                    <div class="text-sm">
-                        <p class="mb-2 text-slate-800"><strong>AI Insight:</strong></p>
-                        <p>${insight}</p>
-                    </div>
-                `;
-            }, 1500);
-        }
-
-        // Import / Export Systems
-        function exportJSONBackup() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData));
-            const dlAnchorElem = document.createElement('a');
-            dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", `BazarPro_Backup_${new Date().toISOString().split('T')[0]}.json`);
-            dlAnchorElem.click();
-            showMessage('Export Successful', 'Your data backup has been saved to your device.', 'success');
-        }
-
-        function importJSONBackup(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const contents = e.target.result;
-                    const parsed = JSON.parse(contents);
-                    
-                    if (parsed && parsed.profile && parsed.transactions) {
-                        appData = parsed;
-                        saveToLocalStorage();
-                        showMessage('Import Successful', 'Data has been restored from your backup file.', 'success');
-                    } else {
-                        showMessage('Import Failed', 'Invalid backup file format.', 'warning');
-                    }
-                } catch (err) {
-                    showMessage('Error', 'Could not read the backup file.', 'warning');
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = ''; // Reset input
-        }
-
-        function confirmDeleteAllData() {
-            showMessage('ERASE ALL DATA?', 'Are you absolutely sure? This will delete all records, settings, and custom categories from this device forever.', 'warning', () => {
-                localStorage.removeItem('dailyBazarProData');
-                location.reload();
-            });
-        }
-
-        function exportExcel() {
-            const filtered = getFilteredTransactions();
-            if (filtered.length === 0) {
-                showMessage('No Data', 'There is no data to export in the current view.', 'warning');
-                return;
-            }
-
-            const exportData = filtered.map(t => ({
-                Date: t.date,
-                Type: capitalize(t.type),
-                Name: t.name,
-                Category: t.category,
-                Amount: t.amount,
-                Note: t.note || ''
-            }));
-
-            const ws = XLSX.utils.json_to_sheet(exportData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Transactions");
-            XLSX.writeFile(wb, `Report_${document.getElementById('start-date').value}_to_${document.getElementById('end-date').value}.xlsx`);
-        }
-
-        function exportPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            const filtered = getFilteredTransactions();
-            if (filtered.length === 0) {
-                showMessage('No Data', 'There is no data to export in the current view.', 'warning');
-                return;
-            }
-
-            doc.setFontSize(16);
-            doc.text(`${appData.profile.name} - Financial Report`, 14, 20);
-            doc.setFontSize(10);
-            doc.text(`Period: ${document.getElementById('start-date').value} to ${document.getElementById('end-date').value}`, 14, 28);
-
-            const tableData = filtered.map(t => [
-                t.date,
-                capitalize(t.type),
-                t.name,
-                t.category,
-                `${t.type === 'income' ? '+' : '-'}${t.amount}`
-            ]);
-
-            doc.autoTable({
-                startY: 35,
-                head: [['Date', 'Type', 'Description', 'Category', 'Amount']],
-                body: tableData,
-                theme: 'grid',
-                headStyles: { fillColor: [79, 70, 229] }
-            });
-
-            doc.save(`Report_${new Date().toISOString().split('T')[0]}.pdf`);
-        }
+            confirmBtn.onclick = () => { container.classList.remove('active'); if(onConfirm) onConfirm(); };
+            cancelBtn.onclick = () => container.classList.remove('active');
+        };
 
     </script>
 </body>
